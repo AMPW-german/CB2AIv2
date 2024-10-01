@@ -1,9 +1,9 @@
 base_tower
-cluster_bomb_ability
+cluster_bomb_ability //unused
 heli
 plane
 player
-Player_1
+Player_1 //unused
 repair
 rocket
 star
@@ -17,19 +17,14 @@ truck_r
 truck_r_d
 unit
 unit_d
-bullet_s
-bullet_n
-bullet_p
+bullet_s //Special tank
+bullet_n //normal bullet
+bullet_p //Player bullet
 ability_gun
 ability_flare
 red_dot
-bullet_t
+bullet_t //tank bullet
 ability_r_s
 ability_cluster
 bomb
 base_fuel
-base_silos
-ability_repair
-ability_napalm
-ability_r
-ability_b
