@@ -1,0 +1,43 @@
+# Path to dataset directories
+train: D:/CB2AIv2/dataset0/images/train # Train dataset directory
+val: D:/CB2AIv2/dataset0/images/val     # Validation dataset directory
+test: D:/CB2AIv2/dataset0/images/test   # Optional, Test dataset directory
+
+# Number of classes
+nc: 32  # Number of object classes
+
+# Class names
+names: [
+    'player',
+    'base_tower',
+    'base_fuel',
+    'base_silos',
+    'star',
+    'ability_gun',
+    'ability_b',
+    'ability_repair',
+    'ability_flare',
+    'ability_cluster',
+    'ability_napalm',
+    'ability_r',
+    'ability_r_s',
+    'bomb',
+    'bullet_p',
+    'bullet_n',
+    'bullet_t',
+    'bullet_s',
+    'rocket',
+    'red_dot',
+    'plane',
+    'heli',
+    'truck_r',
+    'truck_r_d',
+    'truck',
+    'truck_d',
+    'tank_s',
+    'tank_s_d',
+    'tank',
+    'tank_d',
+    'unit',
+    'unit_d'
+]
