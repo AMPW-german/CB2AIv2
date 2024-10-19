@@ -164,6 +164,7 @@ cython_debug/
 
 # AMPW
 .runs
+.videos
 runs/detect/train4/args.yaml
 runs/detect/train4/confusion_matrix_normalized.png
 runs/detect/train4/confusion_matrix.png
