@@ -36,39 +36,3 @@ def control_joystick(degree):
     global sine_values
     global cosine_values
     pyautogui.mouseDown(sine_values[int(degree * 10**precision)], cosine_values[int(degree * 10**precision)])
-
-
-"""
-    degree = math.radians(degree)
-    # degree: grad vom joystick
-    # 0 -> oben, 90 -> rechts, 180 -> unten, 270 -> links
-    # trigonometrie:
-    # sinus: g/h
-    # cosinus: a/h
-    # h = 1 (einheitskreis)
-    # x = cos^-1(degree)
-    # y = sin^-1(degree)
-
-    y = math.cos(degree)
-    x = math.sin(degree)
-    x = round(x, 2)
-    y = round(y, 2)
-
-    # 101, 498 top left corner of 315^2
-    #258, 658 middle
-
-    Xc = 158*x
-    Yc = 158*y
-
-    Yc *= -1
-
-    Xc += 258
-    Yc += 658
-
-    Xc += window_pos[0]
-    Yc += window_pos[1]
-
-    #pyautogui.mouseDown(x=Xc, y=Yc)
-
-    return True
-"""
