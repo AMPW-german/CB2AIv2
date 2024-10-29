@@ -1,10 +1,8 @@
-#import cv2
 import pygetwindow as gw
-#import pyautogui
 import numpy as np
 import time
 import mss
-#from PIL import Image
+from multiprocessing import shared_memory
 
 program_name = "LDPlayer-2"
 window = gw.getWindowsWithTitle(program_name)[0]  # Assumes the program is open and window is available
@@ -25,38 +23,42 @@ def capturer(sct):
 
     return img
 
-def timer(fps: int):
+def timer(fps: int, image_name, array_10_name, array_50_name, yolo_name, image_shape, array_10_shape, array_50_shape, yolo_shape, lock):
     interval = 1 / fps
     next_time = time.perf_counter()
+    frame_count = 0
 
     with mss.mss() as sct:
         while 1:
-            # Call your function
             capturer(sct)
 
-            # Schedule the next call
+            frame_count += 1
+
+
             next_time += interval
             sleep_time = next_time - time.perf_counter()
             if sleep_time > 0:
                 time.sleep(sleep_time)
             else:
-                # If we're running late, reset the timer to avoid frame accumulation
                 next_time = time.perf_counter()
 
 
-# print(img.size)
-# img.show()
-def timer_fps(fps: int):
+def timer_fps(fps: int, image_name, array_10_name, array_50_name, yolo_name, image_shape, array_10_shape, array_50_shape, yolo_shape, lock):
     interval = 1 / fps
     next_time = time.perf_counter()
 
     frame_count = 0
     fps_timer = time.perf_counter()
 
+    image_dtype = np.uint8
+
+    image_shm = shared_memory.SharedMemory(name=image_name)
+
+    image = np.ndarray(image_shape, dtype=image_dtype, buffer=image_shm.buf)
+
     with mss.mss() as sct:
         while 1:
-            # Call your function
-            capturer(sct)
+            image = capturer(sct)
             
             frame_count += 1
 
