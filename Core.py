@@ -24,6 +24,7 @@ if __name__ == '__main__':
 
     import Bot.control
     import Bot.video_tools
+    import Bot.access_test
 
     #Bot.control.preCalculate()
 
@@ -62,7 +63,12 @@ if __name__ == '__main__':
     yolo_data = np.ndarray(yolo_shape, dtype=yolo_dtype, buffer=yolo_shm.buf)
 
     lock = Lock()
-    p = Process(target=Bot.video_tools.timer_fps, args=(80, image_shm.name, array_10_shm.name, array_50_shm.name, yolo_shm.name, image_shape, array_10_shape, array_50_shape, yolo_shape, lock))
-    p.start()
+    processes = []
+    processes.append(Process(target=Bot.video_tools.timer_fps, args=(80, image_shm.name, array_10_shm.name, array_50_shm.name, yolo_shm.name, image_shape, array_10_shape, array_50_shape, yolo_shape, lock)))
+    processes.append(Process(target=Bot.access_test.access_image, args=(image_shm.name, image_shape)))
 
-    p.join()
+    for p in processes:
+        p.start()
+
+
+    processes[0].join()

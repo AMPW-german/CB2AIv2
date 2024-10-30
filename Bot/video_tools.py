@@ -21,7 +21,7 @@ def capturer(sct):
         "height": bottom - top
     }))
 
-    return img
+    return img[..., :3]
 
 def timer(fps: int, image_name, array_10_name, array_50_name, yolo_name, image_shape, array_10_shape, array_50_shape, yolo_shape, lock):
     interval = 1 / fps
@@ -58,7 +58,7 @@ def timer_fps(fps: int, image_name, array_10_name, array_50_name, yolo_name, ima
 
     with mss.mss() as sct:
         while 1:
-            image = capturer(sct)
+            np.copyto(image, capturer(sct))
             
             frame_count += 1
 
