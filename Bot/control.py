@@ -4,6 +4,8 @@ import math
 import time
 import pygetwindow as gw
 import ctypes
+import multiprocessing.shared_memory as shared_memory
+import struct
 
 precision = 1  # Set this to 1 for 0.1 degree increments, 2 for 0.01, etc.
 num_angles = 360 * 10**precision  # Total number of angles based on precision
@@ -39,7 +41,39 @@ def get_sin_cos(degree):
     else:
         raise IndexError("Index out of bounds for the sine/cosine arrays.")
 
-def control_joystick(degree):
+def control_joystick(degree_shm_name):
     global sine_values
     global cosine_values
-    pyautogui.mouseDown(sine_values[int(degree * 10**precision)], cosine_values[int(degree * 10**precision)])
+    preCalculate()
+    degree_shm = shared_memory.SharedMemory(name=degree_shm_name)
+
+    while 1:
+        if (keyboard.is_pressed('up')):
+            degree = struct.unpack('d', degree_shm.buf[:8])[0]
+            pyautogui.mouseDown(sine_values[int(degree * 10**precision)], cosine_values[int(degree * 10**precision)])
+        else:
+            pyautogui.mouseUp()
+
+def player_control(degree_shm_name, rate):
+    last_time = time.time()  # To calculate the time delta
+
+    degree_shm = shared_memory.SharedMemory(name=degree_shm_name)
+
+    while 1:
+        degree = struct.unpack('d', degree_shm.buf[:8])[0]
+        current_time = time.time()
+        dt = current_time - last_time  # Calculate delta time in seconds
+        last_time = current_time
+
+        # Check if left or right arrow key is pressed
+        if keyboard.is_pressed('left'):
+            degree -= rate * dt
+            if degree < 0:
+                degree = 359 - int(degree / 360)*degree
+        if keyboard.is_pressed('right'):
+            degree += rate * dt
+            if degree >= 360:
+                degree -= int(degree / 360)*360
+        
+        degree_shm.buf[:8] = struct.pack('d', degree)
+        time.sleep(0.01)
