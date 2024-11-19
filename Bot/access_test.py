@@ -2,7 +2,6 @@ from multiprocessing import shared_memory
 import numpy as np
 import time
 
-
 def access_image(image_name, image_shape, image_count_name, yolo_name, yolo_shape):
     image_dtype = np.uint8
     image_shm = shared_memory.SharedMemory(name=image_name)

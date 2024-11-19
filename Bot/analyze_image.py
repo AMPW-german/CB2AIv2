@@ -1,5 +1,3 @@
-
-
 def check_pixels(image, xStart, yStart, xRange, yRange, controllist):
 
     xEnd = xStart + xRange
@@ -26,7 +24,7 @@ def check_pixels(image, xStart, yStart, xRange, yRange, controllist):
 
     return counter, percent
 
-def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, health_percent_name, pause_name):
+def analyze(image_name, image_shape, image_count_name, fuel_percent_name, health_percent_name, pause_name):
     import multiprocessing.shared_memory as shared_memory
     import numpy as np
 
