@@ -85,7 +85,7 @@ if __name__ == '__main__':
     processes.append(Process(target=Bot.control.control_joystick, args=(degree_shm.name,)))
     processes.append(Process(target=Bot.control.player_control, args=(degree_shm.name, 270)))
     processes.append(Process(target=Bot.yolo.track, args=(image_shm.name, image_shape, image_count_shm.name, yolo_shm.name, yolo_shape)))
-    #processes.append(Process(target=Bot.))
+    processes.append(Process(target=Bot.analyze_image.analyze_image, args=(image_shm.name, image_shape, image_count_shm.name, fuel_percent_shm.name, health_percent_shm.name, pause_shm.name,)))
 
     for p in processes:
         p.start()
