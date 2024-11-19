@@ -3,7 +3,7 @@ import numpy as np
 import time
 
 
-def access_image(image_name, image_shape, image_count_name):
+def access_image(image_name, image_shape, image_count_name, yolo_name, yolo_shape):
     image_dtype = np.uint8
     image_shm = shared_memory.SharedMemory(name=image_name)
     image = np.ndarray(image_shape, dtype=image_dtype, buffer=image_shm.buf)
@@ -17,19 +17,13 @@ def access_image(image_name, image_shape, image_count_name):
     fps_timer = time.perf_counter()
     interval = 1 / 60
 
+    yolo_dtype = np.float32
+    yolo_shm = shared_memory.SharedMemory(name=yolo_name)
+    yolo = np.ndarray(yolo_shape, dtype=yolo_dtype, buffer=yolo_shm.buf)
 
     while 1:
+        if image_count[0] > image_count_old:
+            image_count_old = image_count[0]
 
-        if time.perf_counter() - fps_timer >= 1.0:
-            # print(f"Current FPS: {image_count[0]}")
-            image_count[0] = 0
-            fps_timer = time.perf_counter()
-
-        # Schedule the next call
-        next_time += interval
-        sleep_time = next_time - time.perf_counter()
-        if sleep_time > 0:
-            time.sleep(sleep_time)
-        else:
-            # If we're running late, reset the timer to avoid frame accumulation
-            next_time = time.perf_counter()
+            print(image_count)
+            print(list(yolo)[0])

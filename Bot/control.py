@@ -6,6 +6,7 @@ import pygetwindow as gw
 import ctypes
 import multiprocessing.shared_memory as shared_memory
 import struct
+import numpy as np
 
 precision = 1  # Set this to 1 for 0.1 degree increments, 2 for 0.01, etc.
 num_angles = 360 * 10**precision  # Total number of angles based on precision
@@ -13,6 +14,7 @@ num_angles = 360 * 10**precision  # Total number of angles based on precision
 # Create ctypes arrays to hold the sine and cosine values
 sine_values = (ctypes.c_float * num_angles)()
 cosine_values = (ctypes.c_float * num_angles)()
+degree_dtype = np.double
 
 def preCalculate():
     global sine_values
@@ -49,7 +51,7 @@ def control_joystick(degree_shm_name):
 
     while 1:
         if (keyboard.is_pressed('up')):
-            degree = struct.unpack('d', degree_shm.buf[:8])[0]
+            degree = np.ndarray((1,), dtype=degree_dtype, buffer=degree_shm.buf)
             pyautogui.mouseDown(sine_values[int(degree * 10**precision)], cosine_values[int(degree * 10**precision)])
         else:
             pyautogui.mouseUp()
@@ -60,7 +62,7 @@ def player_control(degree_shm_name, rate):
     degree_shm = shared_memory.SharedMemory(name=degree_shm_name)
 
     while 1:
-        degree = struct.unpack('d', degree_shm.buf[:8])[0]
+        degree = np.ndarray((1,), dtype=degree_dtype, buffer=degree_shm.buf)
         current_time = time.time()
         dt = current_time - last_time  # Calculate delta time in seconds
         last_time = current_time
