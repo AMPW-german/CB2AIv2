@@ -48,10 +48,35 @@ def control_joystick(degree_shm_name):
     global cosine_values
     preCalculate()
     degree_shm = shared_memory.SharedMemory(name=degree_shm_name)
+    degree = np.ndarray((1,), dtype=degree_dtype, buffer=degree_shm.buf)
+    # rate = 270
 
     while 1:
+        current_time = time.time()
+        dt = current_time - last_time  # Calculate delta time in seconds
+        last_time = current_time
+
         if (keyboard.is_pressed('up')):
-            degree = np.ndarray((1,), dtype=degree_dtype, buffer=degree_shm.buf)
+
+            """
+            actual degree = 180
+            degree = 270
+            ad - d < d - ad -> left
+
+            actual degree = 270
+            degree = 180
+            ad - d > d - ad -> right
+            """
+            # if actual_degree - degree < degree - actual_degree: # left
+            #     actual_degree -= rate * dt
+            #     if actual_degree < 0:
+            #         actual_degree = 359 - int(actual_degree / 360)*actual_degree
+                    
+            # if actual_degree - degree > degree - actual_degree: # rigth
+            #     actual_degree += rate * dt
+            #     if actual_degree >= 360:
+            #         actual_degree -= int(actual_degree / 360)*360
+
             pyautogui.mouseDown(sine_values[int(degree * 10**precision)], cosine_values[int(degree * 10**precision)])
         else:
             pyautogui.mouseUp()
