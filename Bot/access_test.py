@@ -24,5 +24,5 @@ def access_image(image_name, image_shape, image_count_name, yolo_name, yolo_shap
         if image_count[0] > image_count_old:
             image_count_old = image_count[0]
 
-            print(image_count)
-            print(list(yolo)[0])
+            # print(image_count)
+            # print(list(yolo)[0])

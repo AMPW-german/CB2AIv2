@@ -51,6 +51,8 @@ def control_joystick(degree_shm_name):
     degree = np.ndarray((1,), dtype=degree_dtype, buffer=degree_shm.buf)
     # rate = 270
 
+    last_time = time.time()
+
     while 1:
         current_time = time.time()
         dt = current_time - last_time  # Calculate delta time in seconds

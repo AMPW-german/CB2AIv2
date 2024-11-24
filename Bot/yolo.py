@@ -1,11 +1,20 @@
 import multiprocessing.shared_memory as shared_memory
 
+
+
+
 def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape):
     from ultralytics import YOLO
+    import ultralytics.trackers.track as track
+    from ultralytics.trackers import BOTSORT
     import numpy as np
 
     model = YOLO(r"runs\\detect\\train\\weights\\best.pt")
     print(model.names)
+
+    botsort = BOTSORT()
+
+    tracker = track.on_predict_start(botsort, True)
 
     image_dtype = np.uint8
     image_shm = shared_memory.SharedMemory(name=image_name)
@@ -24,16 +33,18 @@ def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape):
         if image_count[0] > image_count_old:
             image_count_old = image_count[0]
 
-            #results = model.predict(image, stream=True, save=False, visualize=False, conf=0.64, device="cuda:0")
+            results = model.predict(image, stream=True, save=False, visualize=False, conf=0.64, device="cuda:0")
             #imgsz=(928, 1600) #very slow
-            results = model.track(image, stream=True, persist=True, save=False, visualize=False, conf=0.64, device="cuda:0")
+            #results = model.track(image, stream=True, persist=True, save=False, visualize=False, conf=0.64, device="cuda:0")
 
+            for result in results:          
+                res = tracker.update(result)
+                print(res)
 
-            for result in results:                
-                print()
-                yolo[:] = 0
-                res = result.numpy().boxes
+                # print()
+                # yolo[:] = 0
+                # res = result.numpy().boxes
 
-                for i in range(len(res)):
-                    box = res[i].xyxy.tolist()[0]
-                    yolo[i] = (box[0], box[1], box[2], box[3], res[i].cls[0], res[i].id, res[i].conf[0])
+                # for i in range(len(res)):
+                #     box = res[i].xyxy.tolist()[0]
+                #     yolo[i] = (box[0], box[1], box[2], box[3], res[i].cls[0], res[i].id, res[i].conf[0])

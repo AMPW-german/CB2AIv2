@@ -39,7 +39,7 @@ if __name__ == '__main__':
     image_shape = (900, 1600, 3)
     mouse_click_shape = (32,)
     keyboard_button_shape = (32,)
-    yolo_shape = (200, 7)  # 200 objects, 6 fields each
+    yolo_shape = (100, 7,)  # 200 objects, 6 fields each
 
     # Data type choices
     image_dtype = np.uint8
