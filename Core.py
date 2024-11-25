@@ -46,6 +46,7 @@ if __name__ == '__main__':
     mouse_click_dtype = np.uint16
     keyboard_button_dtype = np.uint8
     yolo_dtype = np.float32
+    score_dtype = np.int32
     degree_dtype = np.double
     fuel_percent_dtype = np.float32
     health_percent_dtype = np.float32
@@ -59,6 +60,7 @@ if __name__ == '__main__':
     mouse_click_shm = shared_memory.SharedMemory(create=True, size=int(np.prod(mouse_click_shape) * np.dtype(mouse_click_dtype).itemsize))
     keyboard_button_shm = shared_memory.SharedMemory(create=True, size=int(np.prod(keyboard_button_shape) * np.dtype(keyboard_button_dtype).itemsize))
     yolo_shm = shared_memory.SharedMemory(create=True, size=int(np.prod(yolo_shape) * np.dtype(yolo_dtype).itemsize))
+    score_shm = shared_memory.SharedMemory(create=True, size=np.dtype(score_dtype).itemsize)
     degree_shm = shared_memory.SharedMemory(create=True, size=np.dtype(degree_dtype).itemsize)
     fuel_percent_shm = shared_memory.SharedMemory(create=True, size=np.dtype(fuel_percent_dtype).itemsize)
     health_percent_shm = shared_memory.SharedMemory(create=True, size=np.dtype(health_percent_dtype).itemsize)
@@ -72,6 +74,7 @@ if __name__ == '__main__':
     keyboard_button_array = np.ndarray(keyboard_button_shape, dtype=keyboard_button_dtype, buffer=keyboard_button_shm.buf)
     keyboard_button_array[0] = ord('f')
     yolo_data = np.ndarray(yolo_shape, dtype=yolo_dtype, buffer=yolo_shm.buf)
+    score = np.ndarray((1,), dtype=score_dtype, buffer=score_shm.buf)
     degree = np.ndarray((1,), dtype=degree_dtype, buffer=degree_shm.buf)
     fuel_percent = np.ndarray((1,), dtype=fuel_percent_dtype, buffer=fuel_percent_shm.buf)
     health_percent = np.ndarray((1,), dtype=health_percent_dtype, buffer=health_percent_shm.buf)
@@ -84,7 +87,7 @@ if __name__ == '__main__':
     processes.append(Process(target=Bot.access_test.access_image, args=(image_shm.name, image_shape, image_count_shm.name, yolo_shm.name, yolo_shape)))
     processes.append(Process(target=Bot.control.control_joystick, args=(degree_shm.name,)))
     processes.append(Process(target=Bot.control.player_control, args=(degree_shm.name, 270)))
-    processes.append(Process(target=Bot.yolo.track, args=(image_shm.name, image_shape, image_count_shm.name, yolo_shm.name, yolo_shape)))
+    processes.append(Process(target=Bot.yolo.track, args=(image_shm.name, image_shape, image_count_shm.name, yolo_shm.name, yolo_shape, score_shm.name)))
     processes.append(Process(target=Bot.analyze_image.analyze_image, args=(image_shm.name, image_shape, image_count_shm.name, fuel_percent_shm.name, health_percent_shm.name, pause_shm.name,)))
 
     for p in processes:

@@ -3,7 +3,7 @@ import multiprocessing.shared_memory as shared_memory
 
 
 
-def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape):
+def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape, score_name):
     from ultralytics import YOLO
     import ultralytics.trackers.track as track
     from ultralytics.trackers import BOTSORT
@@ -24,6 +24,10 @@ def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape):
     image_count = np.ndarray((1,), dtype=np.uint32, buffer=image_count_shm.buf)
 
     image_count_old = image_count[0]
+
+    score_dtype = np.int32
+    score_shm = shared_memory.SharedMemory(name=score_name)
+    score = np.ndarray((1,), dtype=score_dtype, buffer=score_shm.buf)
 
     enemy_dict = {}
     # keys: dead enemy id, values: alive enemy ids
@@ -67,5 +71,8 @@ def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape):
 
                 print(score)
                 for i in range(len(res)):
-                    box = res[i].xyxy.tolist()[0]
+                    #box = res[i].xyxy.tolist()[0]
+                    box = res[i].xywhn.tolist()[0] # normalized bounding boxes with width and height, I hope the ai understands it better than xyxy
+
+                    # x, y, x, y, class id, tracking id, confidence
                     yolo[i] = (box[0], box[1], box[2], box[3], res[i].cls[0], res[i].id[0] if res[i].id[0] != None else -1, res[i].conf[0])
