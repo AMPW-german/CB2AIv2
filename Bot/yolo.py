@@ -12,10 +12,6 @@ def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape):
     model = YOLO(r"runs\\detect\\train\\weights\\best.pt")
     print(model.names)
 
-    botsort = BOTSORT()
-
-    tracker = track.on_predict_start(botsort, True)
-
     image_dtype = np.uint8
     image_shm = shared_memory.SharedMemory(name=image_name)
     image = np.ndarray(image_shape, dtype=image_dtype, buffer=image_shm.buf)
@@ -29,22 +25,47 @@ def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape):
 
     image_count_old = image_count[0]
 
+    enemy_dict = {}
+    # keys: dead enemy id, values: alive enemy ids
+    replaceDict = {24: 23, 26: 25, 28: 27, 30: 29, 31: 30}
+
+    score = 0
+
     while 1:
         if image_count[0] > image_count_old:
             image_count_old = image_count[0]
 
-            results = model.predict(image, stream=True, save=False, visualize=False, conf=0.64, device="cuda:0")
+            #results = model.predict(image, stream=True, save=False, visualize=False, conf=0.64, device="cuda:0")
             #imgsz=(928, 1600) #very slow
-            #results = model.track(image, stream=True, persist=True, save=False, visualize=False, conf=0.64, device="cuda:0")
+            results = model.track(image, stream=True, persist=True, save=False, visualize=False, conf=0.64, device="cuda:0", verbose=False)
+
 
             for result in results:          
-                res = tracker.update(result)
-                print(res)
+                #print(result)
 
-                # print()
-                # yolo[:] = 0
-                # res = result.numpy().boxes
+                print()
+                yolo[:] = 0
+                res = result.cpu().numpy().boxes
+                clss = res.cls.tolist()
 
-                # for i in range(len(res)):
-                #     box = res[i].xyxy.tolist()[0]
-                #     yolo[i] = (box[0], box[1], box[2], box[3], res[i].cls[0], res[i].id, res[i].conf[0])
+                for k in enemy_dict.keys():
+                    if res.id is not None:
+                        # k must be in the returned ids
+                        if k in res.id:
+                            # the class id of the track must be as key in the replaceDict -> the track is dead
+                            if replaceDict.get(res.cls[np.where(k == res.id)[0][0]]) is not None:
+                                score += 10
+
+                print(enemy_dict)
+                enemy_dict.clear()
+
+                for j in range(len(clss)):
+                    if res.id[j] is not None:
+                        enemyVal = replaceDict.get(clss[j])
+                        if enemy_dict.get(res.id[j]) is None and enemyVal is None:
+                            enemy_dict[res.id[j]] = clss[j]
+
+                print(score)
+                for i in range(len(res)):
+                    box = res[i].xyxy.tolist()[0]
+                    yolo[i] = (box[0], box[1], box[2], box[3], res[i].cls[0], res[i].id[0] if res[i].id[0] != None else -1, res[i].conf[0])
