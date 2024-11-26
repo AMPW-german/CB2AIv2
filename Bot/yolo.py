@@ -8,6 +8,7 @@ def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape, scor
     import ultralytics.trackers.track as track
     from ultralytics.trackers import BOTSORT
     import numpy as np
+    import time
 
     model = YOLO(r"runs\\detect\\train\\weights\\best.pt")
     print(model.names)
@@ -45,11 +46,11 @@ def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape, scor
 
 
             for result in results:          
-                #print(result)
-
-                print()
-                yolo[:] = 0
+                yolo[:] = -1
                 res = result.cpu().numpy().boxes
+                if res is None:
+                    continue
+
                 clss = res.cls.tolist()
 
                 for k in enemy_dict.keys():
@@ -60,19 +61,24 @@ def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape, scor
                             if replaceDict.get(res.cls[np.where(k == res.id)[0][0]]) is not None:
                                 score += 10
 
-                print(enemy_dict)
                 enemy_dict.clear()
 
                 for j in range(len(clss)):
+                    if res.id is None:
+                        continue
                     if res.id[j] is not None:
                         enemyVal = replaceDict.get(clss[j])
                         if enemy_dict.get(res.id[j]) is None and enemyVal is None:
                             enemy_dict[res.id[j]] = clss[j]
 
-                print(score)
                 for i in range(len(res)):
                     #box = res[i].xyxy.tolist()[0]
                     box = res[i].xywhn.tolist()[0] # normalized bounding boxes with width and height, I hope the ai understands it better than xyxy
 
+                    if res[i].id is None:
+                        res[i].id = -1
+
                     # x, y, x, y, class id, tracking id, confidence
                     yolo[i] = (box[0], box[1], box[2], box[3], res[i].cls[0], res[i].id[0] if res[i].id[0] != None else -1, res[i].conf[0])
+        else:
+            time.sleep(0.001)

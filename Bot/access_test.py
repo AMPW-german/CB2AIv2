@@ -2,7 +2,7 @@ from multiprocessing import shared_memory
 import numpy as np
 import time
 
-def access_image(image_name, image_shape, image_count_name, yolo_name, yolo_shape):
+def access_image(image_name, image_shape, image_count_name, yolo_name, yolo_shape, done_name):
     image_dtype = np.uint8
     image_shm = shared_memory.SharedMemory(name=image_name)
     image = np.ndarray(image_shape, dtype=image_dtype, buffer=image_shm.buf)
@@ -20,9 +20,16 @@ def access_image(image_name, image_shape, image_count_name, yolo_name, yolo_shap
     yolo_shm = shared_memory.SharedMemory(name=yolo_name)
     yolo = np.ndarray(yolo_shape, dtype=yolo_dtype, buffer=yolo_shm.buf)
 
+    done_dtype = np.bool_
+    done_shm = shared_memory.SharedMemory(name=done_name)
+    done = np.ndarray((1,), dtype=done_dtype, buffer=done_shm.buf)
+
+
     while 1:
         if image_count[0] > image_count_old:
             image_count_old = image_count[0]
+
+            print(done)
 
             # print(image_count)
             # print(list(yolo)[0])

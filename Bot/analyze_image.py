@@ -24,14 +24,16 @@ def check_pixels(image, xStart, yStart, xRange, yRange, controllist):
 
     return counter, percent
 
-def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, health_percent_name, pause_name):
+def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, health_percent_name, pause_name, done_name):
     import multiprocessing.shared_memory as shared_memory
     import numpy as np
+    import time
 
     image_dtype = np.uint8
     fuel_percent_dtype = np.float32
     health_percent_dtype = np.float32
     pause_dtype = np.bool_
+    done_dtype = np.bool_
 
     image_shm = shared_memory.SharedMemory(name=image_name)
     image = np.ndarray(image_shape, dtype=image_dtype, buffer=image_shm.buf)
@@ -46,7 +48,9 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
     health_percent = np.ndarray((1,), dtype=health_percent_dtype, buffer=health_percent_shm.buf)
 
     pause_shm = shared_memory.SharedMemory(name=pause_name)
+    done_shm = shared_memory.SharedMemory(name=done_name)
     pause = np.ndarray((1,), dtype=pause_dtype, buffer=pause_shm.buf)
+    done = np.ndarray((1,), dtype=done_dtype, buffer=done_shm.buf)
 
     while 1:
         if image_count[0] > image_count_old:
@@ -82,7 +86,10 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
                         counter += 1
 
                 if counter / len(list2check) >= 0.5:
-                    pause = True
+                    pause[0] = True
+                    done[0] = True
+        else:
+            time.sleep(0.001)
 
 #yellow = 255, 255, 1
 points_of_interest = [
