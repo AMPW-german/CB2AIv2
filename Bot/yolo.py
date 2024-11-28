@@ -64,7 +64,7 @@ def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape, scor
                 enemy_dict.clear()
 
                 for j in range(len(clss)):
-                    if res.id is None:
+                    if res.id is None or res[j] is None:
                         continue
                     if res.id[j] is not None:
                         enemyVal = replaceDict.get(clss[j])
@@ -75,10 +75,10 @@ def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape, scor
                     #box = res[i].xyxy.tolist()[0]
                     box = res[i].xywhn.tolist()[0] # normalized bounding boxes with width and height, I hope the ai understands it better than xyxy
 
-                    if res[i].id is None:
-                        res[i].id = -1
+                    if res is None:
+                        continue
 
                     # x, y, x, y, class id, tracking id, confidence
-                    yolo[i] = (box[0], box[1], box[2], box[3], res[i].cls[0], res[i].id[0] if res[i].id[0] != None else -1, res[i].conf[0])
+                    yolo[i] = (box[0], box[1], box[2], box[3], res[i].cls[0], res[i].id[0] if res[i].id is not None else -1, res[i].conf[0])
         else:
             time.sleep(0.001)

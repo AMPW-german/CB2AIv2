@@ -6,6 +6,7 @@ if __name__ == '__main__':
 
     from stable_baselines3 import PPO
 
+    import Bot.user_input
     import Bot.control
     import Bot.keyboard_controller
     import Bot.video_tools
@@ -13,6 +14,7 @@ if __name__ == '__main__':
     import Bot.analyze_image
     import Bot.yolo
     import Bot.AI
+    import Bot.action_recorder
 
     #print("Status: running", end="\r", flush=True)
 
@@ -23,13 +25,13 @@ if __name__ == '__main__':
     # Fixed configurations
     image_shape = (900, 1600, 3)
     mouse_click_shape = (32,)
-    keyboard_button_shape = (32,)
+    keyboard_button_shape = (6,)
     yolo_shape = (100, 7,)  # 200 objects, 6 fields each
 
     # Data type choices
     image_dtype = np.uint8
     mouse_click_dtype = np.uint16
-    keyboard_button_dtype = np.uint8
+    keyboard_button_dtype = np.bool_
     yolo_dtype = np.float32
     score_dtype = np.int32
     degree_dtype = np.double
@@ -74,42 +76,44 @@ if __name__ == '__main__':
     print(done)
     user_input = np.ndarray((1,), dtype=user_input_dtype, buffer=user_input_shm.buf)
 
-    env = Bot.AI.cb2aiEnv(image_count_shm.name, pause_shm.name, done_shm.name, user_input_shm.name, degree_shm.name, keyboard_button_shm.name, keyboard_button_shape, health_percent_shm.name, yolo_shm.name, yolo_shape, score_shm.name)
-
     lock = Lock()
     processes = []
+    processes.append(Process(target=Bot.user_input.user_controller, args=(pause_shm.name, done_shm.name, user_input_shm.name, degree_shm.name, 270, keyboard_button_shm.name, keyboard_button_shape,)))
     processes.append(Process(target=Bot.video_tools.timer, args=(80, image_shm.name, image_shape, image_count_shm.name,)))
     processes.append(Process(target=Bot.control.control_joystick, args=(degree_shm.name,)))
-    processes.append(Process(target=Bot.control.player_control, args=(degree_shm.name, 270,)))
+    # processes.append(Process(target=Bot.control.player_control, args=(degree_shm.name, 270,)))
     processes.append(Process(target=Bot.yolo.track, args=(image_shm.name, image_shape, image_count_shm.name, yolo_shm.name, yolo_shape, score_shm.name,)))
     processes.append(Process(target=Bot.analyze_image.analyze_image, args=(image_shm.name, image_shape, image_count_shm.name, fuel_percent_shm.name, health_percent_shm.name, pause_shm.name, done_shm.name,)))
     processes.append(Process(target=Bot.keyboard_controller.keyboard_exe, args=(keyboard_button_shm.name, keyboard_button_shape, pause_shm.name,)))
     
+    processes.append(Process(target=Bot.action_recorder.record, args=(image_count_shm.name, pause_shm.name, done_shm.name, user_input_shm.name, degree_shm.name, keyboard_button_shm.name, keyboard_button_shape, health_percent_shm.name, yolo_shm.name, yolo_shape,)))
     #processes.append(Process(target=Bot.access_test.access_image, args=(image_shm.name, image_shape, image_count_shm.name, yolo_shm.name, yolo_shape, done_shm.name,)))
 
     for p in processes:
         p.start()
 
-    time.sleep(5)
-
-    model = PPO("MultiInputPolicy", env, verbose=1, n_steps=32, ent_coef=1, learning_rate=0.05)  # Use MultiInputPolicy for Dict spaces
-    model.learn(total_timesteps=20000000000)
-
     while 1:
-        if done:
-            keyboard.press_and_release("b")
-            model.save(r".\\ai\\")
-            model.learn(total_timesteps=20000000000)
-
-
+        # print("main")
+        # print(pause)
+        # print(user_input)
+        # print()
+        time.sleep(0.01)
         # TODO: change it to a hotkey
         if keyboard.is_pressed("backspace"):
-            model.save(r".\\ai\\")
             break
         
         #print(keyboard_button_array)
 
-    processes[0].join()
+    #processes[0].join()
+
+    done = True
+    pause = True
+    print("ending loop")
+
+    time.sleep(5)
+
+    for p in processes:
+        p.kill()
 
     image_shm.unlink()
     image_count_shm.unlink()
@@ -123,6 +127,3 @@ if __name__ == '__main__':
     pause_shm.unlink()
     done_shm.unlink()
     user_input_shm.unlink()
-
-    for p in processes:
-        p.kill()

@@ -16,13 +16,15 @@ def keyboard_exe(keyboard_button_name, keyboard_button_shape, pause_name):
 
     pause = np.ndarray((1,), dtype=pause_dtype, buffer=pause_shm.buf)
 
+    key_dict = {"0": "g", "1": "b", "2": "a", "3": "r", "4": "s", "5": "f"}
+    key_list = list(key_dict.values())
+
+    print(key_list)
+
     while 1:
         if not pause:
-            for key in keyboard_button:
-                if key == 0:
-                    time.sleep(0.001)
-                    continue
-                if not pause:
-                    keyboard.press_and_release(chr(key))
-                    keyboard_button[key] = 0
-            #keyboard_button[:] = 0
+            for i in range(len(keyboard_button)):
+                if keyboard_button[i]:
+                    keyboard.press_and_release(key_list[i])
+                    keyboard_button[i] = False
+        time.sleep(0.025)

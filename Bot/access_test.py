@@ -24,7 +24,6 @@ def access_image(image_name, image_shape, image_count_name, yolo_name, yolo_shap
     done_shm = shared_memory.SharedMemory(name=done_name)
     done = np.ndarray((1,), dtype=done_dtype, buffer=done_shm.buf)
 
-
     while 1:
         if image_count[0] > image_count_old:
             image_count_old = image_count[0]

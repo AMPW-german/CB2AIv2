@@ -166,3 +166,4 @@ cython_debug/
 runs
 videos
 ppo_lunar_lander.zip
+ai/ai.csv

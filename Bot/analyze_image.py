@@ -63,8 +63,7 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
             yEnd = 20
             x_range = xEnd
             y_range = yEnd
-            count, fuel_percent = check_pixels(image, xStart, yStart, x_range, y_range, fuel_list_2d)
-            fuel_percent = fuel_percent   
+            count, fuel_percent[0] = check_pixels(image, xStart, yStart, x_range, y_range, fuel_list_2d)
 
             # check health
             xStart = 441
@@ -73,9 +72,8 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
             yEnd = 22
             x_range = xEnd
             y_range = yEnd
-            count, health_percent = check_pixels(image, xStart, yStart, x_range, y_range, health_list_2d)
-            health_percent = health_percent
-            
+            count, health_percent[0] = check_pixels(image, xStart, yStart, x_range, y_range, health_list_2d)
+
             for list2check in points_of_interest:
                 counter = 0
                 for x, y, r, g, b in list2check:
