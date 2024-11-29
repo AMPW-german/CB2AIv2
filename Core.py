@@ -4,8 +4,6 @@ if __name__ == '__main__':
     import keyboard
     import time
 
-    from stable_baselines3 import PPO
-
     import Bot.user_input
     import Bot.control
     import Bot.keyboard_controller
@@ -13,8 +11,9 @@ if __name__ == '__main__':
     import Bot.access_test
     import Bot.analyze_image
     import Bot.yolo
-    import Bot.AI
     import Bot.action_recorder
+    # import Bot.AI
+    import Bot.AIV2
 
     #print("Status: running", end="\r", flush=True)
 
@@ -41,7 +40,6 @@ if __name__ == '__main__':
     done_dtype = np.bool_
     user_input_dtype = np.bool_
 
-    # TODO: Add array for the results
     # Create shared memory blocks
     image_shm = shared_memory.SharedMemory(create=True, size=int(np.prod(image_shape) * np.dtype(image_dtype).itemsize))
     image_count_shm = shared_memory.SharedMemory(create=True, size = int(np.dtype(np.uint32).itemsize))
@@ -71,13 +69,11 @@ if __name__ == '__main__':
     health_percent = np.ndarray((1,), dtype=health_percent_dtype, buffer=health_percent_shm.buf)
     pause = np.ndarray((1,), dtype=pause_dtype, buffer=pause_shm.buf)
     done = np.ndarray((1,), dtype=pause_dtype, buffer=done_shm.buf)
-    print(done)
-    #done = False
-    print(done)
     user_input = np.ndarray((1,), dtype=user_input_dtype, buffer=user_input_shm.buf)
 
     lock = Lock()
     processes = []
+
     processes.append(Process(target=Bot.user_input.user_controller, args=(pause_shm.name, done_shm.name, user_input_shm.name, degree_shm.name, 270, keyboard_button_shm.name, keyboard_button_shape,)))
     processes.append(Process(target=Bot.video_tools.timer, args=(80, image_shm.name, image_shape, image_count_shm.name,)))
     processes.append(Process(target=Bot.control.control_joystick, args=(degree_shm.name,)))
@@ -86,8 +82,12 @@ if __name__ == '__main__':
     processes.append(Process(target=Bot.analyze_image.analyze_image, args=(image_shm.name, image_shape, image_count_shm.name, fuel_percent_shm.name, health_percent_shm.name, pause_shm.name, done_shm.name,)))
     processes.append(Process(target=Bot.keyboard_controller.keyboard_exe, args=(keyboard_button_shm.name, keyboard_button_shape, pause_shm.name,)))
     
-    processes.append(Process(target=Bot.action_recorder.record, args=(image_count_shm.name, pause_shm.name, done_shm.name, user_input_shm.name, degree_shm.name, keyboard_button_shm.name, keyboard_button_shape, health_percent_shm.name, yolo_shm.name, yolo_shape,)))
+    processes.append(Process(target=Bot.AIV2.predictor, args=(image_count_shm.name, pause_shm.name, done_shm.name, user_input_shm.name, degree_shm.name, keyboard_button_shm.name, keyboard_button_shape, health_percent_shm.name, yolo_shm.name, yolo_shape,)))
+    #processes.append(Process(target=Bot.action_recorder.record, args=(image_count_shm.name, pause_shm.name, done_shm.name, user_input_shm.name, degree_shm.name, keyboard_button_shm.name, keyboard_button_shape, health_percent_shm.name, yolo_shm.name, yolo_shape,)))
+    
     #processes.append(Process(target=Bot.access_test.access_image, args=(image_shm.name, image_shape, image_count_shm.name, yolo_shm.name, yolo_shape, done_shm.name,)))
+
+    print("starting Processes")
 
     for p in processes:
         p.start()
