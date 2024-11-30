@@ -35,7 +35,7 @@ def record(image_count_name, pause_name, done_name, user_input_name, degree_name
 
     DIR = r".\\ai\\"
 
-    seed = random.randint()
+    seed = random.randint(0, 10000000000)
 
     index = np.where(yolo[:, 4] == 0)[0]
     if index is not None:
@@ -49,12 +49,12 @@ def record(image_count_name, pause_name, done_name, user_input_name, degree_name
         player_pos = (0.45, 0.45, 0.1, 0.1)
 
     while 1:
-        if pause:
+        if pause[0]:
             continue
         with open(f"{DIR}ai.csv", "a") as f:
             writer = csv.writer(f)
             for i in range(100):
-                if pause or done or not user_input:
+                if pause[0] or done[0] or not user_input:
                     break
 
                 if image_count[0] > image_count_old:
@@ -76,5 +76,5 @@ def record(image_count_name, pause_name, done_name, user_input_name, degree_name
                     frame_data = [image_count + seed, degree, keyboard_button, player_pos[0][:4], health_percent, [item for sublist in yolo for item in sublist]]
                     frame_data_2 = [item for sublist in frame_data for item in sublist]
                     writer.writerow(frame_data_2)
-        if done:
+        if done[0]:
             break

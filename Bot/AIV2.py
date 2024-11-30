@@ -13,7 +13,7 @@ class CB2AIv2(nn.Module):
         # Define the network layers
         self.fc1 = nn.Linear(input_dim, 256)
         self.fc2 = nn.Linear(256, 256)
-        self.fc2 = nn.Linear(256, 256)
+        # self.fc2 = nn.Linear(256, 256)
         self.fc2 = nn.Linear(256, 128)
         
         # Output layer for joystick (continuous)
@@ -38,6 +38,7 @@ class CB2AIv2(nn.Module):
 
 def train():
     observations = []
+    image_num = []
     class_ids = []
     track_ids = []
     health = []
@@ -69,35 +70,37 @@ def train():
             class_ids.append(classes)
             track_ids.append(tracks)
 
+            image_num.append(int(float(row[0])))
             health.append(float(row[12]))
             joystick.append(float(row[1]) / 360)
             buttons.append([True if i == "True" else False for i in row[2:8]])
             
     one_hot_encoder = OneHotEncoder(sparse_output=False)
+    image_num = np.array(image_num).reshape(-1, 1)
     class_ids = np.array(class_ids)
     track_ids = np.array(track_ids)
     joystick = np.array(joystick)
     health = np.array(health).reshape(-1, 1)
-    class_ids_encoded = one_hot_encoder.fit_transform(class_ids.reshape(-1, 1))
-    track_ids_encoded = one_hot_encoder.fit_transform(track_ids.reshape(-1, 1))
+    # class_ids_encoded = one_hot_encoder.fit_transform(class_ids.reshape(-1, 1))
+    # track_ids_encoded = one_hot_encoder.fit_transform(track_ids.reshape(-1, 1))
 
-    observations_augmented = np.hstack([observations, class_ids, track_ids, health])
+    observations_augmented = np.hstack([image_num, observations, class_ids, track_ids, health])
 
     actions = np.hstack([joystick.reshape(-1, 1), buttons])
 
-    observations_train, observations_val, actions_train, actions_val = train_test_split(
-        observations_augmented, actions, test_size=0.2, random_state=42
-    )
+    # observations_train, observations_val, actions_train, actions_val = train_test_split(
+    #     observations_augmented, actions, test_size=0.2, random_state=42
+    # )
 
     # Hyperparameters
-    learning_rate = 0.0001
+    learning_rate = 0.00001
     batch_size = 256
-    num_epochs = 5000
+    num_epochs = 50000
     num_buttons = 6  # Adjust according to the number of buttons
 
-    observations_train_tensor = torch.tensor(observations_train, dtype=torch.float32)
-    actions_joystick_train_tensor = torch.tensor(actions_train[:, :1], dtype=torch.float32).view(-1, 1)
-    actions_buttons_train_tensor = torch.tensor(actions_train[:, 1:], dtype=torch.float32)
+    observations_train_tensor = torch.tensor(observations_augmented, dtype=torch.float32)
+    actions_joystick_train_tensor = torch.tensor(actions[:, :1], dtype=torch.float32).view(-1, 1)
+    actions_buttons_train_tensor = torch.tensor(actions[:, 1:], dtype=torch.float32)
 
     input_dim = observations_augmented.shape[1]
     print(input_dim)
@@ -172,7 +175,7 @@ def predictor(image_count_name, pause_name, done_name, user_input_name, degree_n
     image_count_old = image_count[0]
     yolo = np.ndarray(yolo_shape, dtype=yolo_dtype, buffer=yolo_shm.buf)
     
-    model = CB2AIv2(701, 6)
+    model = CB2AIv2(702, 6)
 
     model.load_state_dict(torch.load(r".\\ai\\final_model.pth"))
 
@@ -182,7 +185,7 @@ def predictor(image_count_name, pause_name, done_name, user_input_name, degree_n
         if image_count[0] > image_count_old + 5 and not pause:
             image_count_old = image_count[0]
 
-            input_array = np.concatenate((np.array(yolo[:, :4].flatten()), np.array(yolo[:, 6].flatten()), np.array(yolo[:, 4:6].flatten()), np.array(health_percent[0]).reshape(1,)))
+            input_array = np.concatenate((np.array(image_count).reshape(1,), np.array(yolo[:, :4].flatten()), np.array(yolo[:, 6].flatten()), np.array(yolo[:, 4:6].flatten()), np.array(health_percent[0]).reshape(1,)))
 
             input_tensor = torch.tensor(input_array, dtype=torch.float32)
             input_tensor = input_tensor.unsqueeze(0)

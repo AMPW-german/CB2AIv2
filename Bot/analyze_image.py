@@ -85,7 +85,7 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
 
                 if counter / len(list2check) >= 0.5:
                     pause[0] = True
-                    done[0] = True
+
         else:
             time.sleep(0.001)
 
