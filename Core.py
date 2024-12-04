@@ -36,6 +36,7 @@ if __name__ == '__main__':
     degree_dtype = np.double
     fuel_percent_dtype = np.float32
     health_percent_dtype = np.float32
+    base_health_percent_dtype = np.float32
     pause_dtype = np.bool_
     done_dtype = np.bool_
     user_input_dtype = np.bool_
@@ -50,6 +51,7 @@ if __name__ == '__main__':
     degree_shm = shared_memory.SharedMemory(create=True, size=np.dtype(degree_dtype).itemsize)
     fuel_percent_shm = shared_memory.SharedMemory(create=True, size=np.dtype(fuel_percent_dtype).itemsize)
     health_percent_shm = shared_memory.SharedMemory(create=True, size=np.dtype(health_percent_dtype).itemsize)
+    base_health_percent_shm = shared_memory.SharedMemory(create=True, size=np.dtype(base_health_percent_dtype).itemsize)
     pause_shm = shared_memory.SharedMemory(create=True, size=np.dtype(pause_dtype).itemsize)
     done_shm = shared_memory.SharedMemory(create=True, size=np.dtype(done_dtype).itemsize)
     user_input_shm = shared_memory.SharedMemory(create=True, size=np.dtype(user_input_dtype).itemsize)
@@ -67,6 +69,7 @@ if __name__ == '__main__':
     degree = np.ndarray((1,), dtype=degree_dtype, buffer=degree_shm.buf)
     fuel_percent = np.ndarray((1,), dtype=fuel_percent_dtype, buffer=fuel_percent_shm.buf)
     health_percent = np.ndarray((1,), dtype=health_percent_dtype, buffer=health_percent_shm.buf)
+    base_health_percent = np.ndarray((1,), dtype=base_health_percent_dtype, buffer=base_health_percent_shm.buf)
     pause = np.ndarray((1,), dtype=pause_dtype, buffer=pause_shm.buf)
     done = np.ndarray((1,), dtype=pause_dtype, buffer=done_shm.buf)
     user_input = np.ndarray((1,), dtype=user_input_dtype, buffer=user_input_shm.buf)
@@ -79,11 +82,10 @@ if __name__ == '__main__':
     processes.append(Process(target=Bot.control.control_joystick, args=(degree_shm.name,)))
     # processes.append(Process(target=Bot.control.player_control, args=(degree_shm.name, 270,)))
     processes.append(Process(target=Bot.yolo.track, args=(image_shm.name, image_shape, image_count_shm.name, yolo_shm.name, yolo_shape, score_shm.name,)))
-    processes.append(Process(target=Bot.analyze_image.analyze_image, args=(image_shm.name, image_shape, image_count_shm.name, fuel_percent_shm.name, health_percent_shm.name, pause_shm.name, done_shm.name,)))
+    processes.append(Process(target=Bot.analyze_image.analyze_image, args=(image_shm.name, image_shape, image_count_shm.name, fuel_percent_shm.name, health_percent_shm.name, base_health_percent_shm.name, pause_shm.name, done_shm.name,)))
     processes.append(Process(target=Bot.keyboard_controller.keyboard_exe, args=(keyboard_button_shm.name, keyboard_button_shape, pause_shm.name,)))
     
-    processes.append(Process(target=Bot.AIV2.predictor, args=(image_count_shm.name, pause_shm.name, done_shm.name, user_input_shm.name, degree_shm.name, keyboard_button_shm.name, keyboard_button_shape, health_percent_shm.name, yolo_shm.name, yolo_shape,)))
-    # processes.append(Process(target=Bot.action_recorder.record, args=(image_count_shm.name, pause_shm.name, done_shm.name, user_input_shm.name, degree_shm.name, keyboard_button_shm.name, keyboard_button_shape, health_percent_shm.name, yolo_shm.name, yolo_shape,)))
+    # processes.append(Process(target=Bot.action_recorder.record, args=(image_count_shm.name, pause_shm.name, done_shm.name, user_input_shm.name, degree_shm.name, keyboard_button_shm.name, keyboard_button_shape, health_percent_shm.name, base_health_percent_shm.name, yolo_shm.name, yolo_shape,)))
     
     #processes.append(Process(target=Bot.access_test.access_image, args=(image_shm.name, image_shape, image_count_shm.name, yolo_shm.name, yolo_shape, done_shm.name,)))
 

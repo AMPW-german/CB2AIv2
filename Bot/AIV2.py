@@ -42,6 +42,7 @@ def train():
     class_ids = []
     track_ids = []
     health = []
+    base_health = []
     joystick = []
     buttons = []
 
@@ -54,7 +55,7 @@ def train():
             if row == []:
                 continue
 
-            observation = list(row[13:])
+            observation = list(row[14:])
             obs = []
             classes = []
             tracks = []
@@ -72,6 +73,7 @@ def train():
 
             image_num.append(int(float(row[0])))
             health.append(float(row[12]))
+            base_health.append(float(row[13]))
             joystick.append(float(row[1]) / 360)
             buttons.append([True if i == "True" else False for i in row[2:8]])
             
@@ -81,10 +83,11 @@ def train():
     track_ids = np.array(track_ids)
     joystick = np.array(joystick)
     health = np.array(health).reshape(-1, 1)
+    base_health = np.array(base_health).reshape(-1, 1)
     # class_ids_encoded = one_hot_encoder.fit_transform(class_ids.reshape(-1, 1))
     # track_ids_encoded = one_hot_encoder.fit_transform(track_ids.reshape(-1, 1))
 
-    observations_augmented = np.hstack([image_num, observations, class_ids, track_ids, health])
+    observations_augmented = np.hstack([observations, class_ids, track_ids, health, base_health])
 
     actions = np.hstack([joystick.reshape(-1, 1), buttons])
 
@@ -95,7 +98,7 @@ def train():
     # Hyperparameters
     learning_rate = 0.00001
     batch_size = 256
-    num_epochs = 50000
+    num_epochs = 5000
     num_buttons = 6  # Adjust according to the number of buttons
 
     observations_train_tensor = torch.tensor(observations_augmented, dtype=torch.float32)
@@ -144,7 +147,7 @@ def train():
     print("Final model saved!")
 
 
-def predictor(image_count_name, pause_name, done_name, user_input_name, degree_name, keyboard_button_name, keyboard_button_shape, health_percent_name, yolo_name, yolo_shape):
+def predictor(image_count_name, pause_name, done_name, user_input_name, degree_name, keyboard_button_name, keyboard_button_shape, health_percent_name, base_health_percent_name, yolo_name, yolo_shape):
     import multiprocessing.shared_memory as shared_memory
     
     image_count_dtype = np.uint32
@@ -154,6 +157,7 @@ def predictor(image_count_name, pause_name, done_name, user_input_name, degree_n
     degree_dtype = np.double
     keyboard_button_dtype = np.bool_
     health_percent_dtype = np.float32
+    base_health_percent_dtype = np.float32
     yolo_dtype = np.float32
 
     image_count_shm = shared_memory.SharedMemory(name=image_count_name)
@@ -163,6 +167,7 @@ def predictor(image_count_name, pause_name, done_name, user_input_name, degree_n
     degree_shm = shared_memory.SharedMemory(name=degree_name)
     keyboard_button_shm = shared_memory.SharedMemory(name=keyboard_button_name)
     health_percent_shm = shared_memory.SharedMemory(name=health_percent_name)
+    base_health_percent_shm = shared_memory.SharedMemory(name=base_health_percent_name)
     yolo_shm = shared_memory.SharedMemory(name=yolo_name)
     
     image_count = np.ndarray((1,), dtype=image_count_dtype, buffer=image_count_shm.buf)
@@ -172,12 +177,15 @@ def predictor(image_count_name, pause_name, done_name, user_input_name, degree_n
     degree = np.ndarray((1,), dtype=degree_dtype, buffer=degree_shm.buf)
     keyboard_button = np.ndarray(keyboard_button_shape, dtype=keyboard_button_dtype, buffer=keyboard_button_shm.buf)
     health_percent = np.ndarray((1,), dtype=health_percent_dtype, buffer=health_percent_shm.buf)
+    base_health_percent = np.ndarray((1,), dtype=base_health_percent_dtype, buffer=base_health_percent_shm.buf)
     image_count_old = image_count[0]
     yolo = np.ndarray(yolo_shape, dtype=yolo_dtype, buffer=yolo_shm.buf)
     
     model = CB2AIv2(702, 6)
 
-    model.load_state_dict(torch.load(r".\\ai\\final_model.pth"))
+    # 0: test without base health
+    # 1: added base health, very little training data (2 runs)
+    model.load_state_dict(torch.load(r".\\ai\\final_model_1.pth"))
 
     model.eval()
 
@@ -185,7 +193,7 @@ def predictor(image_count_name, pause_name, done_name, user_input_name, degree_n
         if image_count[0] > image_count_old + 5 and not pause:
             image_count_old = image_count[0]
 
-            input_array = np.concatenate((np.array(image_count).reshape(1,), np.array(yolo[:, :4].flatten()), np.array(yolo[:, 6].flatten()), np.array(yolo[:, 4:6].flatten()), np.array(health_percent[0]).reshape(1,)))
+            input_array = np.concatenate((np.array(yolo[:, :4].flatten()), np.array(yolo[:, 6].flatten()), np.array(yolo[:, 4:6].flatten()), np.array(health_percent[0]).reshape(1,), np.array(base_health_percent[0]).reshape(1,)))
 
             input_tensor = torch.tensor(input_array, dtype=torch.float32)
             input_tensor = input_tensor.unsqueeze(0)
@@ -194,7 +202,10 @@ def predictor(image_count_name, pause_name, done_name, user_input_name, degree_n
                 joystick_preds, button_preds = model(input_tensor)
                 print("Joystick Prediction:", joystick_preds.numpy()[0][0] * 360)
                 print("Button Predictions:", [True if button_pred >= 0.5 else False for button_pred in button_preds.numpy()[0]])
-        
+                button_preds = [True if button_pred >= 0.5 else False for button_pred in button_preds.numpy()[0]]
+                
+                for i in range(6):
+                    keyboard_button[i] = button_preds[i]
         if done:
             break
 

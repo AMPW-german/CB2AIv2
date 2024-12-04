@@ -4,7 +4,7 @@ import csv
 import os, os.path
 import random
 
-def record(image_count_name, pause_name, done_name, user_input_name, degree_name, keyboard_button_name, keyboard_button_shape, health_percent_name, yolo_name, yolo_shape,):
+def record(image_count_name, pause_name, done_name, user_input_name, degree_name, keyboard_button_name, keyboard_button_shape, health_percent_name, base_health_percent_name, yolo_name, yolo_shape,):
     image_count_dtype = np.uint32
     pause_dtype = np.bool_
     end_dtype = np.bool_
@@ -12,6 +12,7 @@ def record(image_count_name, pause_name, done_name, user_input_name, degree_name
     degree_dtype = np.double
     keyboard_button_dtype = np.bool_
     health_percent_dtype = np.float32
+    base_health_percent_dtype = np.float32
     yolo_dtype = np.float32
 
     image_count_shm = shared_memory.SharedMemory(name=image_count_name)
@@ -21,6 +22,7 @@ def record(image_count_name, pause_name, done_name, user_input_name, degree_name
     degree_shm = shared_memory.SharedMemory(name=degree_name)
     keyboard_button_shm = shared_memory.SharedMemory(name=keyboard_button_name)
     health_percent_shm = shared_memory.SharedMemory(name=health_percent_name)
+    base_health_percent_shm = shared_memory.SharedMemory(name=base_health_percent_name)
     yolo_shm = shared_memory.SharedMemory(name=yolo_name)
     
     image_count = np.ndarray((1,), dtype=image_count_dtype, buffer=image_count_shm.buf)
@@ -30,6 +32,7 @@ def record(image_count_name, pause_name, done_name, user_input_name, degree_name
     degree = np.ndarray((1,), dtype=degree_dtype, buffer=degree_shm.buf)
     keyboard_button = np.ndarray(keyboard_button_shape, dtype=keyboard_button_dtype, buffer=keyboard_button_shm.buf)
     health_percent = np.ndarray((1,), dtype=health_percent_dtype, buffer=health_percent_shm.buf)
+    base_health_percent = np.ndarray((1,), dtype=base_health_percent_dtype, buffer=base_health_percent_shm.buf)
     image_count_old = image_count[0]
     yolo = np.ndarray(yolo_shape, dtype=yolo_dtype, buffer=yolo_shm.buf)
 
@@ -51,7 +54,7 @@ def record(image_count_name, pause_name, done_name, user_input_name, degree_name
     while 1:
         if pause[0]:
             continue
-        with open(f"{DIR}ai.csv", "a") as f:
+        with open(f"{DIR}ai.csv", "a", newline='') as f:
             writer = csv.writer(f)
             for i in range(100):
                 if pause[0] or done[0] or not user_input:
@@ -73,7 +76,7 @@ def record(image_count_name, pause_name, done_name, user_input_name, degree_name
                         yolo[index][:] = -1
 
                     # frame_id + seed, degree, buttons, user_pos (x/y), health, yolo data
-                    frame_data = [image_count + seed, degree, keyboard_button, player_pos[0][:4], health_percent, [item for sublist in yolo for item in sublist]]
+                    frame_data = [image_count + seed, degree, keyboard_button, player_pos[0][:4], health_percent, base_health_percent, [item for sublist in yolo for item in sublist]]
                     frame_data_2 = [item for sublist in frame_data for item in sublist]
                     writer.writerow(frame_data_2)
         if done[0]:
