@@ -54,15 +54,11 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 
             if not user_input[0]:
                 index = np.where(yolo[:, 4] == 0)[0]
-                print(index)
                 index = index[0] if len(index) > 0 else None
-                print(type(index))
                 if index is not None:
-                    print("indexing")
                     player_pos = yolo[index][:4].copy() if yolo[index][0] >= 0 else player_pos
                     #yolo[index][:] = -1
 
-                print(player_pos)
 
                 if player_pos[0] < 0.2:
                     revese = False
@@ -71,9 +67,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 
                 if not revese:
                     degree[0] = 90
-                    print(90)
                 else:
                     degree[0] = 270
-                    print(270)
         else:
             sleep(0.01)

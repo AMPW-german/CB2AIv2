@@ -56,9 +56,15 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
     pause = np.ndarray((1,), dtype=pause_dtype, buffer=pause_shm.buf)
     done = np.ndarray((1,), dtype=done_dtype, buffer=done_shm.buf)
 
+    img_cp_dtype = np.int16
+    img_cp = image.copy().astype(img_cp_dtype)
+    
+
     while 1:
         if image_count[0] > image_count_old:
             image_count_old = image_count[0]
+
+            img_cp = image.copy().astype(img_cp_dtype)
 
             # check fuel
             xStart = 262
@@ -67,7 +73,7 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
             yEnd = 20
             x_range = xEnd
             y_range = yEnd
-            count, fuel_percent[0] = check_pixels(image, xStart, yStart, x_range, y_range, fuel_list_2d)
+            count, fuel_percent[0] = check_pixels(img_cp, xStart, yStart, x_range, y_range, fuel_list_2d)
 
             # check health
             xStart = 441
@@ -76,7 +82,7 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
             yEnd = 22
             x_range = xEnd
             y_range = yEnd
-            count, health_percent[0] = check_pixels(image, xStart, yStart, x_range, y_range, health_list_2d)
+            count, health_percent[0] = check_pixels(img_cp, xStart, yStart, x_range, y_range, health_list_2d)
 
 
             # check base health
@@ -86,7 +92,7 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
             yEnd = 30
             x_range = xEnd
             y_range = yEnd
-            count, base_health_percent[0] = check_pixels(image, xStart, yStart, x_range, y_range, base_health_list_2d)
+            count, base_health_percent[0] = check_pixels(img_cp, xStart, yStart, x_range, y_range, base_health_list_2d)
 
             for list2check in points_of_interest:
                 counter = 0

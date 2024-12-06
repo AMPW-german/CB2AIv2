@@ -1,41 +1,25 @@
 import time
-import keyboard
-
-player_pos = [5.2914536e-01, 3.4281349e-01, 5.8425255e-02, 1.1915834e-01, 0.0000000e+00, 1.2400000e+03, 9.5573950e-01,]
+import bettercam
 
 
-action_dict = {"gun": "g", "bomb": "b", "rocket": "r", "rocket_cycle": "s", "ability": "a", "flares": "f"}
+TOP = 0
+LEFT = 0
+RIGHT = 1920
+BOTTOM = 1080
+region = (LEFT, TOP, RIGHT, BOTTOM)
+title = "[BetterCam] FPS benchmark"
+start_time = time.perf_counter()
 
-observations = []
 
-flattened_obs = [float(val) for val in player_pos]
-observations.append(flattened_obs)
+fps = 0
+cam = bettercam.create()
+start = time.perf_counter()
+while fps < 200:
+    frame = cam.grab(region=region)
+    if frame is not None:
+        fps += 1
 
-print(observations)
+end_time = time.perf_counter() - start_time
 
-def test():
-    global pause
-
-    pause = False
-
-    def userInput(var):
-        print("user input")
-        print(var.name)
-        print(type(var))
-    keyboard.on_press_key("ctrl", userInput)
-
-    while 1:
-        print(pause)
-        time.sleep(0.5)
-
-test()
-
-for i in range(len(action_dict.keys())):
-    print(i)
-    print(list(action_dict.keys())[i])
-    print(list(action_dict.values())[i])
-    print(ord(list(action_dict.values())[i]))
-    print(chr(ord(list(action_dict.values())[i])))
-
-    keyboard.press_and_release(chr(ord(list(action_dict.values())[i])))
-    print()
+print(f"{title}: {fps/end_time}")
+cam.release()
