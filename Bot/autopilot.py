@@ -53,12 +53,13 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
             image_count_old = image_count[0]
 
             if not user_input[0]:
-                index = np.where(yolo[:, 4] == 0)[0]
+                index = np.where(yolo[:, 6] == 0)[0]
                 index = index[0] if len(index) > 0 else None
                 if index is not None:
-                    player_pos = yolo[index][:4].copy() if yolo[index][0] >= 0 else player_pos
+                    player_pos = yolo[index][:6].copy() if yolo[index][0] >= 0 else player_pos
                     #yolo[index][:] = -1
 
+                print(player_pos)
 
                 if player_pos[0] < 0.2:
                     revese = False

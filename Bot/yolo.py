@@ -1,9 +1,5 @@
-import multiprocessing.shared_memory as shared_memory
-
-
-
-
-def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape, score_name):
+def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape):
+    import multiprocessing.shared_memory as shared_memory
     from ultralytics import YOLO
     import ultralytics.trackers.track as track
     from ultralytics.trackers import BOTSORT
@@ -26,20 +22,13 @@ def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape, scor
 
     image_count_old = image_count[0]
 
-    score_dtype = np.int32
-    score_shm = shared_memory.SharedMemory(name=score_name)
-    score = np.ndarray((1,), dtype=score_dtype, buffer=score_shm.buf)
-
-    enemy_dict = {}
-    # keys: dead enemy id, values: alive enemy ids
-    replaceDict = {24: 23, 26: 25, 28: 27, 30: 29, 31: 30}
-
-    score = 0
+    old_tracks = yolo.copy()
 
     while 1:
         if image_count[0] > image_count_old:
             image_count_old = image_count[0]
 
+            print(image_count)
             #results = model.predict(image, stream=True, save=False, visualize=False, conf=0.64, device="cuda:0")
             #imgsz=(928, 1600) #very slow
             results = model.track(image, stream=True, persist=True, save=False, visualize=False, conf=0.64, device="cuda:0", verbose=False)
@@ -53,24 +42,6 @@ def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape, scor
 
                 clss = res.cls.tolist()
 
-                for k in enemy_dict.keys():
-                    if res.id is not None:
-                        # k must be in the returned ids
-                        if k in res.id:
-                            # the class id of the track must be as key in the replaceDict -> the track is dead
-                            if replaceDict.get(res.cls[np.where(k == res.id)[0][0]]) is not None:
-                                score += 10
-
-                enemy_dict.clear()
-
-                for j in range(len(clss)):
-                    if res.id is None or res[j] is None:
-                        continue
-                    if res.id[j] is not None:
-                        enemyVal = replaceDict.get(clss[j])
-                        if enemy_dict.get(res.id[j]) is None and enemyVal is None:
-                            enemy_dict[res.id[j]] = clss[j]
-
                 for i in range(len(res)):
                     #box = res[i].xyxy.tolist()[0]
                     box = res[i].xywhn.tolist()[0] # normalized bounding boxes with width and height, I hope the ai understands it better than xyxy
@@ -78,7 +49,17 @@ def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape, scor
                     if res is None:
                         continue
 
-                    # x, y, x, y, class id, tracking id, confidence
-                    yolo[i] = (box[0], box[1], box[2], box[3], res[i].cls[0], res[i].id[0] if res[i].id is not None else -1, res[i].conf[0])
+                    xChange = 0
+                    yChange = 0
+
+                    index = np.where(old_tracks[:, 7] == res[i].id)[0]
+                    index = index[0] if len(index) > 0 else None
+                    if index is not None:
+                        xChange = ((box[0] + (box[2] / 2)) - (old_tracks[index][0] + (old_tracks[index][2] / 2)))
+                        yChange = ((box[1] + (box[3] / 2)) - (old_tracks[index][1] + (old_tracks[index][3] / 2)))
+
+                    # x, y, height, length, xChange, yChange, class id, tracking id, confidence
+                    yolo[i] = (box[0], box[1], box[2], box[3], xChange, yChange, res[i].cls[0], res[i].id[0] if res[i].id is not None else -1, res[i].conf[0])
+                old_tracks = yolo.copy()
         else:
             time.sleep(0.001)
