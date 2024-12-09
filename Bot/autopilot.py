@@ -60,20 +60,20 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 
             if not user_input[0]:
 
+                # TODO: change it so the angle is calculated based on vertical distance to line and angle
+
                 dTime = time.perf_counter() - startTime
                 startTime = time.perf_counter()
 
                 index = np.where(yolo[:, 6] == 0)[0]
                 index = index[0] if len(index) > 0 else None
                 if index is not None:
-                    player_pos = yolo[index][:6].copy() if yolo[index][0] >= 0 else player_pos
+                    player_pos = [x*100 for x in yolo[index][:6].copy()] if yolo[index][0] >= 0 else player_pos
                     #yolo[index][:] = -1
 
-                print(player_pos)
-
-                if player_pos[0] < 0.2:
+                if player_pos[0] < 20:
                     revese = False
-                elif player_pos[0] > 0.8:
+                elif player_pos[0] > 80:
                     revese = True
 
                 if not revese:
@@ -81,19 +81,35 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 else:
                     degreeDes = 270
 
-                
-
-                # calculate line angle
-                degreeErr = (degreeDes - degree[0] + 180) % 360 -180
-
-                # calculate players total speed:
-                player_speed = np.sqrt(np.absolute(player_pos[4]**2 + player_pos[5]**2))
-
-                degreeWanted = np.arctan(player_pos[5] / player_speed)
+                max_rate = 270
+                line_height = 20
+                line_angle = convert_angle(degreeDes)
+                m = np.tan(np.radians(line_angle))
 
 
-                degreeDelta = np.sign(degreeErr) * np.min([270 * dTime, np.absolute(degreeErr)])
+                d = (m * player_pos[0] + line_height) - player_pos[1]  # Distance to line
+                v = np.sqrt(player_pos[4] ** 2 + player_pos[5] ** 2)
 
-                degree[0] = degreeDelta
+                # Desired angle relative to the line
+                theta_desired = line_angle + np.degrees(np.arctan2(d, v))
+
+                # Compute angular error and handle wrapping
+                theta_error = (theta_desired - convert_angle(degree[0])) % 360
+                if theta_error > 180:
+                    theta_error -= 360
+
+                # Apply rate-limited angular adjustment
+                d_theta = np.sign(theta_error) * min(max_rate * dTime, abs(theta_error))
+                angle = d_theta if not revese else d_theta - 180
+                print(d)
+                print(player_pos)
+                print(convert_angle(angle))
+
+                degree[0] = convert_angle(angle)
+
         else:
             sleep(0.01)
+
+
+def convert_angle(angle: float):
+    return (-1 * angle + 90) % 360

@@ -2,29 +2,35 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
+def convert_angle(angle: float):
+    return (-1 * angle + 90) % 360
+
 
 # Parameters for simulation
 
 dt = 0.1  # Time step (s)
 
-max_rate = 27  # Maximum angular speed (degrees per second)
+max_rate = 270  # Maximum angular speed (degrees per second)
 
 steps = 10000  # Number of steps
 
-v = 5  # Constant speed of the object (units/s)
+v = 2  # Constant speed of the object (units/s)
 
 
 # Target angle (line direction is vertical, so 90°)
 
+reverse = False
+
 theta_target = 90
+actual_target_angle = convert_angle(theta_target)
+actual_target_angle = actual_target_angle if actual_target_angle < 270 else actual_target_angle - 180
+m = np.tan(np.radians(actual_target_angle))
 
 # Parameters
 
-y_line = 10  # Line y = 10
+y_line = 0.2  # Line y = 10
 
 x_range = np.linspace(-5, 15, 100)  # X-axis range for the line
-
-
 
 
 # Initialize paths
@@ -33,15 +39,18 @@ paths = []  # List to store paths for each starting position
 
 start_positions = [
 
-    {"x": 0, "y": 12, "angle": 90},  # Starting above the line
+    {"x": 0.54, "y": 0.355, "angle": 120},
+    # {"x": 0, "y": 12, "angle": 90},  # Starting above the line
 
-    {"x": 0, "y": 0, "angle": 0},  # Starting below the line
+    # {"x": 0, "y": 4, "angle": 180},  # Starting above the line
+
+    # {"x": 0, "y": 0, "angle": 0},  # Starting below the line
 
 ]
 
 def simulate_path(start_x, start_y, start_angle, max_rate, v, dt, steps, y_target):
 
-    x, y, angle = start_x, start_y, start_angle
+    x, y, angle = start_x, start_y, convert_angle(start_angle)
 
     path_x, path_y = [x], [y]  # Track path
 
@@ -49,39 +58,30 @@ def simulate_path(start_x, start_y, start_angle, max_rate, v, dt, steps, y_targe
 
     for _ in range(steps):
 
-        # Calculate distance to the target line and rate of change of distance
-
-        d = y_target - y  # Distance to line
-
-        theta_desired = 90 if v == 0 else np.degrees(np.arctan2(d, v))  # Desired angle adjustment
-
+        # # Calculate distance to the target line and rate of change of distance
+        d = (m * x + y_line) - y  # Distance to line
         
 
-        # Calculate angular error and adjust angle with rate limit
+        # Desired angle relative to the line
+        theta_desired = actual_target_angle + np.degrees(np.arctan2(d, v))
 
-        theta_error = theta_desired - angle
+        # Compute angular error and handle wrapping
+        theta_error = (theta_desired - angle) % 360
+        if theta_error > 180:
+            theta_error -= 360
 
+        # Apply rate-limited angular adjustment
         d_theta = np.sign(theta_error) * min(max_rate * dt, abs(theta_error))
-
         angle += d_theta
 
-
-
-        # Update position based on new angle
-
+        # Update position based on the new angle
         x += v * np.cos(np.radians(angle)) * dt
-
         y += v * np.sin(np.radians(angle)) * dt
 
-
-
         # Store position
-
         path_x.append(x)
-
         path_y.append(y)
 
-    
 
     return path_x, path_y
 
@@ -105,10 +105,8 @@ plt.figure(figsize=(10, 6))
 
 
 
-# Plot the line y = 10
-
-plt.plot(x_range, [y_line] * len(x_range), label='Line y=10', color='blue', linestyle='--')
-
+# Plot the line
+plt.axline((0, y_line), slope=m, label='Line', color='blue', linestyle='--')
 
 
 # Plot paths for each starting position

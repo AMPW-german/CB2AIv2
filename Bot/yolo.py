@@ -28,7 +28,6 @@ def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape):
         if image_count[0] > image_count_old:
             image_count_old = image_count[0]
 
-            print(image_count)
             #results = model.predict(image, stream=True, save=False, visualize=False, conf=0.64, device="cuda:0")
             #imgsz=(928, 1600) #very slow
             results = model.track(image, stream=True, persist=True, save=False, visualize=False, conf=0.64, device="cuda:0", verbose=False)
