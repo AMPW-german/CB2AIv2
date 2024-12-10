@@ -77,7 +77,7 @@ if __name__ == '__main__':
     processes = []
 
     processes.append(Process(target=Bot.user_input.user_controller, args=(pause_shm.name, done_shm.name, user_input_shm.name, degree_shm.name, 270, keyboard_button_shm.name, keyboard_button_shape,)))
-    processes.append(Process(target=Bot.video_tools.timer, args=(80, image_shm.name, image_shape, image_count_shm.name, done_shm.name,)))
+    processes.append(Process(target=Bot.video_tools.timer, args=(60, image_shm.name, image_shape, image_count_shm.name, done_shm.name,)))
     processes.append(Process(target=Bot.control.control_joystick, args=(degree_shm.name,)))
     # processes.append(Process(target=Bot.control.player_control, args=(degree_shm.name, 270,)))
     processes.append(Process(target=Bot.yolo.track, args=(image_shm.name, image_shape, image_count_shm.name, yolo_shm.name, yolo_shape,)))
@@ -109,8 +109,8 @@ if __name__ == '__main__':
 
     #processes[0].join()
 
-    done = True
-    pause = True
+    done[0] = True
+    pause[0] = True
     print("ending loop")
 
     time.sleep(5)

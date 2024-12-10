@@ -54,10 +54,15 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     startTime = time.perf_counter()
     dTime = startTime
 
+    multiplier = 1 # used to stretch the constant rate of change line in height to increase the turn rate (with the actual position numbers it's very small)
+
+    enemies = {18: 'rocket', 19: 'red_dot', 20: 'plane', 21: 'heli', 22: 'truck_r', 24: 'truck', 26: 'tank_s', 28: 'tank', 30: 'unit'}
+
     while 1:
         if done[0]:
             break
-        if image_count[0] > image_count_old:
+        
+        if image_count[0] > image_count_old and not pause[0]:
             image_count_old = image_count[0]
 
             if not user_input[0]:
@@ -67,12 +72,12 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 index = np.where(yolo[:, 6] == 0)[0]
                 index = index[0] if len(index) > 0 else None
                 if index is not None:
-                    player_pos = [x for x in yolo[index][:6].copy()] if yolo[index][0] >= 0 else player_pos
+                    player_pos = [x * multiplier for x in yolo[index][:6].copy()] if yolo[index][0] >= 0 else player_pos
                     #yolo[index][:] = -1
 
-                if player_pos[0] < 0.2:
+                if player_pos[0] < 0.2 * multiplier:
                     revese = False
-                elif player_pos[0] > 0.8:
+                elif player_pos[0] > 0.8 * multiplier:
                     revese = True
 
                 if not revese:
@@ -80,14 +85,33 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 else:
                     degreeDes = 270
 
-                max_rate = 270
-                line_height = 0.25
-                line_angle = convert_angle(degreeDes)
-                m = np.tan(np.radians(line_angle))
+                enemy_pos = [-1, -1, -1, -1, -1, -1,]
 
+                for enemy_id in enemies.keys():
+                    index = np.where(yolo[:, 6] == enemy_id)[0]
+                    index = index[0] if len(index) > 0 else None
+                    if index is not None:
+                        enemy_pos = yolo[index][:6].copy()
+                        break
+
+                if enemy_pos[0] != -1:
+                    enemy_p = predict_pos(enemy_pos)
+                    player_p = predict_pos(player_pos)
+                    # https://stackoverflow.com/questions/9614109/how-to-calculate-an-angle-from-points
+                    dx = player_p[0] - enemy_p[0]
+                    dy = player_p[1] - enemy_p[1]
+                    theta = np.arctan2(dy, dx)
+                    theta *= 180/np.pi
+                    # theta has a range of -180 to +180
+                    degreeDes = convert_angle(theta if theta > 0 else theta + 360)
+                    print(degreeDes)
+
+                max_rate = 270
+                line_height = 0.25 * multiplier
+                line_angle = convert_angle(degreeDes)
 
                 d = player_pos[1] - line_height if not revese else line_height - player_pos[1]  # Distance to line  # Distance to line
-                v = 0.5 # np.sqrt(player_pos[4] ** 2 + player_pos[5] ** 2)
+                v = 0.125 # np.sqrt(player_pos[4] ** 2 + player_pos[5] ** 2)
 
                 # Desired angle relative to the line
                 theta_desired = line_angle + np.degrees(np.arctan2(d, v))
@@ -100,9 +124,6 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 # Apply rate-limited angular adjustment
                 d_theta = np.sign(theta_error) * min(max_rate * dTime, abs(theta_error))
                 angle = d_theta if not revese else d_theta - 180
-                print(d)
-                print(player_pos)
-                print(convert_angle(angle))
 
                 degree[0] = convert_angle(angle)
 
@@ -112,3 +133,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 
 def convert_angle(angle: float):
     return (-1 * angle + 90) % 360
+
+
+def predict_pos(object):
+    return [object[0] + object[2] / 2 + object[4], object[1] + object[3] / 2 + object[5]]

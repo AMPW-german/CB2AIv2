@@ -57,7 +57,7 @@ def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape):
                         xChange = ((box[0] + (box[2] / 2)) - (old_tracks[index][0] + (old_tracks[index][2] / 2)))
                         yChange = ((box[1] + (box[3] / 2)) - (old_tracks[index][1] + (old_tracks[index][3] / 2)))
 
-                    # x, y, height, length, xChange, yChange, class id, tracking id, confidence
+                    # x, y, length, height, xChange, yChange, class id, tracking id, confidence
                     yolo[i] = (box[0], box[1], box[2], box[3], xChange, yChange, res[i].cls[0], res[i].id[0] if res[i].id is not None else -1, res[i].conf[0])
                 old_tracks = yolo.copy()
         else:
