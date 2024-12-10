@@ -40,11 +40,11 @@ paths = []  # List to store paths for each starting position
 start_positions = [
 
     {"x": 0.54, "y": 0.355, "angle": 120},
-    # {"x": 0, "y": 12, "angle": 90},  # Starting above the line
+    {"x": 0, "y": 12, "angle": 90},  # Starting above the line
 
-    # {"x": 0, "y": 4, "angle": 180},  # Starting above the line
+    {"x": 0, "y": 4, "angle": 180},  # Starting above the line
 
-    # {"x": 0, "y": 0, "angle": 0},  # Starting below the line
+    {"x": 0, "y": 0, "angle": 0},  # Starting below the line
 
 ]
 
@@ -56,7 +56,7 @@ def simulate_path(start_x, start_y, start_angle, max_rate, v, dt, steps, y_targe
 
     
 
-    for _ in range(steps):
+    for u in range(steps):
 
         # # Calculate distance to the target line and rate of change of distance
         d = (m * x + y_line) - y  # Distance to line

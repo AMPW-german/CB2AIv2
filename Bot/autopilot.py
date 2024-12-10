@@ -55,25 +55,24 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     dTime = startTime
 
     while 1:
+        if done[0]:
+            break
         if image_count[0] > image_count_old:
             image_count_old = image_count[0]
 
             if not user_input[0]:
-
-                # TODO: change it so the angle is calculated based on vertical distance to line and angle
-
                 dTime = time.perf_counter() - startTime
                 startTime = time.perf_counter()
 
                 index = np.where(yolo[:, 6] == 0)[0]
                 index = index[0] if len(index) > 0 else None
                 if index is not None:
-                    player_pos = [x*100 for x in yolo[index][:6].copy()] if yolo[index][0] >= 0 else player_pos
+                    player_pos = [x for x in yolo[index][:6].copy()] if yolo[index][0] >= 0 else player_pos
                     #yolo[index][:] = -1
 
-                if player_pos[0] < 20:
+                if player_pos[0] < 0.2:
                     revese = False
-                elif player_pos[0] > 80:
+                elif player_pos[0] > 0.8:
                     revese = True
 
                 if not revese:
@@ -82,13 +81,13 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     degreeDes = 270
 
                 max_rate = 270
-                line_height = 20
+                line_height = 0.25
                 line_angle = convert_angle(degreeDes)
                 m = np.tan(np.radians(line_angle))
 
 
-                d = (m * player_pos[0] + line_height) - player_pos[1]  # Distance to line
-                v = np.sqrt(player_pos[4] ** 2 + player_pos[5] ** 2)
+                d = player_pos[1] - line_height if not revese else line_height - player_pos[1]  # Distance to line  # Distance to line
+                v = 0.5 # np.sqrt(player_pos[4] ** 2 + player_pos[5] ** 2)
 
                 # Desired angle relative to the line
                 theta_desired = line_angle + np.degrees(np.arctan2(d, v))
