@@ -25,8 +25,8 @@ if __name__ == '__main__':
     image_shape = (900, 1600, 3)
     mouse_click_shape = (32,)
     keyboard_button_shape = (6,)
-    yolo_shape = (100, 9,)  # 200 objects, 9 fields each
-    # x, y, height, length, xChange, yChange, class id, tracking id, confidence
+    yolo_shape = (100, 10,)  # 200 objects, 10 fields each
+    # x, y, length, height, xChange, yChange, class id, tracking id, track amount, confidence
     # all x/y values are normalized in to a range between 0 and 1. Only the x/y change vars have a range of -1 to 1
     
     # Data type choices
@@ -65,6 +65,7 @@ if __name__ == '__main__':
     # chr()
     yolo_data = np.ndarray(yolo_shape, dtype=yolo_dtype, buffer=yolo_shm.buf)
     yolo_data[:] = -1
+    yolo_data[:, 8] = 0
     degree = np.ndarray((1,), dtype=degree_dtype, buffer=degree_shm.buf)
     fuel_percent = np.ndarray((1,), dtype=fuel_percent_dtype, buffer=fuel_percent_shm.buf)
     health_percent = np.ndarray((1,), dtype=health_percent_dtype, buffer=health_percent_shm.buf)

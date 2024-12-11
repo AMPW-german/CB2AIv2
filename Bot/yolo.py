@@ -1,8 +1,6 @@
 def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape):
     import multiprocessing.shared_memory as shared_memory
     from ultralytics import YOLO
-    import ultralytics.trackers.track as track
-    from ultralytics.trackers import BOTSORT
     import numpy as np
     import time
 
@@ -53,12 +51,15 @@ def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape):
 
                     index = np.where(old_tracks[:, 7] == res[i].id)[0]
                     index = index[0] if len(index) > 0 else None
+
+                    track_count = 0
                     if index is not None:
                         xChange = ((box[0] + (box[2] / 2)) - (old_tracks[index][0] + (old_tracks[index][2] / 2)))
                         yChange = ((box[1] + (box[3] / 2)) - (old_tracks[index][1] + (old_tracks[index][3] / 2)))
+                        track_count = old_tracks[index][8] + 1
 
-                    # x, y, length, height, xChange, yChange, class id, tracking id, confidence
-                    yolo[i] = (box[0], box[1], box[2], box[3], xChange, yChange, res[i].cls[0], res[i].id[0] if res[i].id is not None else -1, res[i].conf[0])
+                    # x, y, length, height, xChange, yChange, class id, tracking id, track amount, confidence
+                    yolo[i] = (box[0], box[1], box[2], box[3], xChange, yChange, res[i].cls[0], res[i].id[0] if res[i].id is not None else -1, track_count, res[i].conf[0])
                 old_tracks = yolo.copy()
         else:
             time.sleep(0.001)

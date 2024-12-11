@@ -36,7 +36,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     image_count_old = image_count[0]
     yolo = np.ndarray(yolo_shape, dtype=yolo_dtype, buffer=yolo_shm.buf)
 
-    index = np.where(yolo[:, 4] == 0)[0]
+    index = np.where(yolo[:, 6] == 0)[0]
     if index is not None:
         if len(index) >= 1:
             index = index[0]
@@ -73,6 +73,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 index = index[0] if len(index) > 0 else None
                 if index is not None:
                     player_pos = [x * multiplier for x in yolo[index][:6].copy()] if yolo[index][0] >= 0 else player_pos
+                    print(yolo[index][8])
                     #yolo[index][:] = -1
 
                 if player_pos[0] < 0.2 * multiplier:
@@ -84,27 +85,6 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     degreeDes = 90
                 else:
                     degreeDes = 270
-
-                enemy_pos = [-1, -1, -1, -1, -1, -1,]
-
-                for enemy_id in enemies.keys():
-                    index = np.where(yolo[:, 6] == enemy_id)[0]
-                    index = index[0] if len(index) > 0 else None
-                    if index is not None:
-                        enemy_pos = yolo[index][:6].copy()
-                        break
-
-                if enemy_pos[0] != -1:
-                    enemy_p = predict_pos(enemy_pos)
-                    player_p = predict_pos(player_pos)
-                    # https://stackoverflow.com/questions/9614109/how-to-calculate-an-angle-from-points
-                    dx = player_p[0] - enemy_p[0]
-                    dy = player_p[1] - enemy_p[1]
-                    theta = np.arctan2(dy, dx)
-                    theta *= 180/np.pi
-                    # theta has a range of -180 to +180
-                    degreeDes = convert_angle(theta if theta > 0 else theta + 360)
-                    print(degreeDes)
 
                 max_rate = 270
                 line_height = 0.25 * multiplier
@@ -125,15 +105,46 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 d_theta = np.sign(theta_error) * min(max_rate * dTime, abs(theta_error))
                 angle = d_theta if not revese else d_theta - 180
 
-                degree[0] = convert_angle(angle)
+                if degree[0] * 1.1 < degreeDes or degree[0] * 0.9 > degreeDes:
+                    degreeDes = convert_angle(angle)
+
+                enemy_pos = [-1, -1, -1, -1, -1, -1,]
+
+                for enemy_id in enemies.keys():
+                    for i in range(yolo_shape[0]):
+                        if yolo[i, 6] == enemy_id and yolo[i, 8] >= 5:
+                            enemy_pos = yolo[i][:6].copy()
+                            break
+
+                    # index = np.where(yolo[:, 6] == enemy_id)[0]
+                    # index = index[0] if len(index) > 0 else None
+                    # if index is not None:
+                    #     enemy_pos = yolo[index][:6].copy()
+                    #     break
+
+                if enemy_pos[0] != -1:
+                    enemy_p = predict_pos(enemy_pos)
+                    player_p = predict_pos(player_pos)
+                    # https://stackoverflow.com/questions/9614109/how-to-calculate-an-angle-from-points
+                    dx = player_p[0] - enemy_p[0]
+                    dy = player_p[1] - enemy_p[1]
+                    theta = np.arctan2(dy, dx)
+                    theta *= 180/np.pi
+                    # theta has a range of -180 to +180
+                    degreeDes = convert_angle(theta if theta > 0 else theta + 360)
+
+                    if degree[0] * 1.1 > degreeDes and degree[0] * 0.9 < degreeDes:
+                        keyboard_button[0] = 1
+
+                degree[0] = degreeDes
 
         else:
             sleep(0.01)
 
 
 def convert_angle(angle: float):
-    return (-1 * angle + 90) % 360
-
+    a = (-1 * angle + 90)
+    return a % 360 if a > 0 else (-1 * a) % 360
 
 def predict_pos(object):
     return [object[0] + object[2] / 2 + object[4], object[1] + object[3] / 2 + object[5]]
