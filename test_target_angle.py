@@ -7,11 +7,10 @@ model = YOLO(r"runs\\detect\\train\\weights\\best.pt")
 
 def convert_angle(angle: float):
     a = (-1 * angle + 90)
-    return a % 360 if a > 0 else (-1 * a) % 360
-
+    return a % 360
 
 def predict_pos(object):
-    return [object[0] + object[2] / 2 + object[4], object[1] + object[3] / 2 + object[5]]
+    return [1 - object[0] + object[2] / 2 + object[4], object[1] + object[3] / 2 + object[5]]
 
 results = model.track(r".\\images\\test\\2.png", stream=True, persist=True, save=False, visualize=False, conf=0.64, device="cuda:0", verbose=False)
 
@@ -162,6 +161,8 @@ for enemy_id in enemies.keys():
 if enemy_pos[0] != -1:
     enemy_p = predict_pos(enemy_pos)
     player_p = predict_pos(player_pos)
+    print(enemy_p)
+    print(player_p)
     # https://stackoverflow.com/questions/9614109/how-to-calculate-an-angle-from-points
     dx = player_p[0] - enemy_p[0]
     dy = player_p[1] - enemy_p[1]
@@ -169,7 +170,7 @@ if enemy_pos[0] != -1:
     theta *= 180/np.pi
     # theta has a range of -180 to +180
     degreeDes = convert_angle(theta if theta > 0 else theta + 360)
-    print(degreeDes)
+
 
 degree[0] = degreeDes
 
