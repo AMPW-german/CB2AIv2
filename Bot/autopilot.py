@@ -158,3 +158,5 @@ def convert_angle(angle: float):
 
 def predict_pos(object):
     return [1 - object[0] + object[2] / 2 + object[4], object[1] + object[3] / 2 + object[5]]
+
+print()
