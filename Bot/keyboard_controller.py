@@ -16,7 +16,7 @@ def keyboard_exe(keyboard_button_name, keyboard_button_shape, pause_name):
 
     pause = np.ndarray((1,), dtype=pause_dtype, buffer=pause_shm.buf)
 
-    key_dict = {"0": "y", "1": "b", "2": "a", "3": "r", "4": "s", "5": "f"}
+    key_dict = {"0": "g", "1": "b", "2": "a", "3": "r", "4": "s", "5": "f"}
     key_list = list(key_dict.values())
 
     print(key_list)
