@@ -49,7 +49,6 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 
     revese = False
     degreeDes = 90 # desired angle
-    lineHeight = 0.7 # imaginare horizonatal line which the plane should follow if no other objective is active
 
     startTime = time.perf_counter()
     dTime = startTime
@@ -72,19 +71,25 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
         if image_count[0] > image_count_old and not pause[0]:
             image_count_old = image_count[0]
 
+            index = np.where(yolo[:, 6] == 0)[0]
+            index = index[0] if len(index) > 0 else None
+            if index is not None:
+                player_pos = [x * multiplier for x in yolo[index][:6].copy()] if yolo[index][0] >= 0 else player_pos
+
+            print(f"image count: {image_count[0]}")
+
             if not user_input[0]:
                 dTime = time.perf_counter() - startTime
                 startTime = time.perf_counter()
 
-                index = np.where(yolo[:, 6] == 0)[0]
-                index = index[0] if len(index) > 0 else None
-                if index is not None:
-                    player_pos = [x * multiplier for x in yolo[index][:6].copy()] if yolo[index][0] >= 0 else player_pos
-                    #yolo[index][:] = -1
+                # index = np.where(yolo[:, 6] == 0)[0]
+                # index = index[0] if len(index) > 0 else None
+                # if index is not None:
+                #     player_pos = [x * multiplier for x in yolo[index][:6].copy()] if yolo[index][0] >= 0 else player_pos
 
-                if player_pos[0] < 0.2 * multiplier:
+                if player_pos[0] < 0.1 * multiplier:
                     revese = False
-                elif player_pos[0] > 0.8 * multiplier:
+                elif player_pos[0] > 0.9 * multiplier:
                     revese = True
 
                 if not revese:
@@ -92,7 +97,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 else:
                     degreeDes = 270
 
-                line_height = 0.25 * multiplier
+                line_height = 0.3 * multiplier
                 line_angle = convert_angle(degreeDes)
 
                 d = player_pos[1] - line_height if not revese else line_height - player_pos[1]  # Distance to line  # Distance to line
@@ -118,8 +123,8 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 
                 for enemy_id in enemies.keys():
                     for i in range(yolo_shape[0]):
-                        if yolo[i, 6] == enemy_id and yolo[i, 8] >= 5:
-                            enemy_pos = yolo[i][:6].copy()
+                        if yolo[i, 6] == enemy_id and yolo[i, 8] >= 10:
+                            enemy_pos = yolo[i].copy()
                             break
 
                     # index = np.where(yolo[:, 6] == enemy_id)[0]
@@ -140,11 +145,16 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     degreeDes = convert_angle(theta if theta > 0 else theta + 360)
 
                     if degree[0] * 1.1 > degreeDes and degree[0] * 0.9 < degreeDes:
-                        keyboard_button[0] = 1
-                        sleep(0.5)
-                        degreeDes = 0
-                        print("FIRE")
+                        if degreeDes < 200 and not revese:
+                            keyboard_button[0] = 1
+                            print("FIRE")
+                            print(enemy_pos)
 
+                if player_pos[1] > 0.4:
+                    degreeDes = 10
+                    print("Fallback")
+
+                print(degreeDes)
                 degree[0] = degreeDes
                 #print(degree)
 
@@ -158,5 +168,3 @@ def convert_angle(angle: float):
 
 def predict_pos(object):
     return [1 - object[0] + object[2] / 2 + object[4], object[1] + object[3] / 2 + object[5]]
-
-print()

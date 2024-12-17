@@ -19,6 +19,14 @@ if __name__ == '__main__':
 
     # keyboard.add_hotkey('alt', toggle_pause)
 
+    import subprocess
+
+    autoHotKeyPath = r"D:\\programms\\autohotkey\\UX\\"
+    hotkeyPath = f"{autoHotKeyPath}AutoHotkeyUX.exe"
+    scriptPath = f"{autoHotKeyPath}yEr.ahk"
+    
+    subprocess.Popen([hotkeyPath, scriptPath])
+
     counter = 0
 
     # Fixed configurations
