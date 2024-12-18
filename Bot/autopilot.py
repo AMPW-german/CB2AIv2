@@ -64,6 +64,9 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 
     ignoreEnemies = 0
 
+    flightManeuver = "direct"
+    lastCircleDirection = 90
+
     while 1:
         if done[0]:
             break
@@ -75,8 +78,6 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
             index = index[0] if len(index) > 0 else None
             if index is not None:
                 player_pos = [x * multiplier for x in yolo[index][:6].copy()] if yolo[index][0] >= 0 else player_pos
-
-            print(f"image count: {image_count[0]}")
 
             if not user_input[0]:
                 dTime = time.perf_counter() - startTime
@@ -144,17 +145,31 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     # theta has a range of -180 to +180
                     degreeDes = convert_angle(theta if theta > 0 else theta + 360)
 
-                    if degree[0] * 1.1 > degreeDes and degree[0] * 0.9 < degreeDes:
-                        if degreeDes < 200 and not revese:
-                            keyboard_button[0] = 1
-                            print("FIRE")
-                            print(enemy_pos)
+                    if degreeDes > 60 and degreeDes < 120 and flightManeuver != "circle":
+                        flightManeuver = "direct"
+                    else:
+                        flightManeuver = "circle"
+                        lastCircleDirection = 90
 
-                if player_pos[1] > 0.4:
+                    # if degree[0] * 1.1 > degreeDes and degree[0] * 0.9 < degreeDes:
+                    if degreeDes < 200 and not revese:
+                        keyboard_button[0] = 1
+
+                if flightManeuver == "circle":
+                    print("circle")
+                    lastCircleDirection += max_rate * dTime
+                    lastCircleDirection %= 360
+                    degreeDes = lastCircleDirection
+                    # if lastCircleDirection > 20:
+                    #     flightManeuver = "direct"
+
+                if degreeDes > 220 and degreeDes < 260:
+                    keyboard_button[0] = 0
+
+                if player_pos[1] > 0.5:
                     degreeDes = 10
                     print("Fallback")
 
-                print(degreeDes)
                 degree[0] = degreeDes
                 #print(degree)
 
