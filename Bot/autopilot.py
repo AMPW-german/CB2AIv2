@@ -60,12 +60,13 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     enemiesDone = np.ndarray((100,), np.uint32)
     enemiesDone[:] = np.iinfo(np.uint32).max
 
-    max_rate = 270
+    max_rate = 250
 
-    ignoreEnemies = 0
+    enemyDegree = -1 # angle of a line towards the enemy
 
     flightManeuver = "direct"
     lastCircleDirection = 90
+    finishedCircle = False
 
     while 1:
         if done[0]:
@@ -134,6 +135,8 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     #     enemy_pos = yolo[index][:6].copy()
                     #     break
 
+                enemyDegree = -1
+
                 if enemy_pos[0] != -1:
                     enemy_p = predict_pos(enemy_pos)
                     player_p = predict_pos(player_pos)
@@ -143,32 +146,51 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     theta = np.arctan2(dy, dx)
                     theta *= 180/np.pi
                     # theta has a range of -180 to +180
-                    degreeDes = convert_angle(theta if theta > 0 else theta + 360)
+                    enemyDegree = convert_angle(theta if theta > 0 else theta + 360)
 
-                    if degreeDes > 60 and degreeDes < 120 and flightManeuver != "circle":
-                        flightManeuver = "direct"
-                    else:
-                        flightManeuver = "circle"
-                        lastCircleDirection = 90
-
-                    # if degree[0] * 1.1 > degreeDes and degree[0] * 0.9 < degreeDes:
-                    if degreeDes < 200 and not revese:
-                        keyboard_button[0] = 1
+                    if flightManeuver != "circle":
+                        if enemyDegree > 60 and enemyDegree < 120:
+                            flightManeuver = "direct"
+                        else:
+                            flightManeuver = "circle"
+                            lastCircleDirection = 90
 
                 if flightManeuver == "circle":
                     print("circle")
                     lastCircleDirection += max_rate * dTime
-                    lastCircleDirection %= 360
+                    if lastCircleDirection > 360:
+                        lastCircleDirection -= 360
+                        finishedCircle = True
+
+                    if finishedCircle and lastCircleDirection > 20:
+                        finishedCircle = False
+                        flightManeuver = "direct"
                     degreeDes = lastCircleDirection
-                    # if lastCircleDirection > 20:
-                    #     flightManeuver = "direct"
+
+                elif flightManeuver == "direct":
+                    # set degreeDes to enemyDegree but limit the turn rate
+
+                    theta_error = (enemyDegree - degreeDes) % 360
+                    if theta_error > 180:
+                        theta_error -= 360
+                    
+                    degreeDes = convert_angle(np.sign(theta_error) * min(max_rate * dTime, abs(theta_error)))
+
+                if np.abs(degreeDes - enemyDegree) < 10 and enemyDegree != -1:
+                    keyboard_button[0] = 1
+
 
                 if degreeDes > 220 and degreeDes < 260:
                     keyboard_button[0] = 0
 
                 if player_pos[1] > 0.5:
-                    degreeDes = 10
                     print("Fallback")
+                    print(player_pos)
+
+                    if degreeDes > 180:
+                        degreeDes = 350
+                    else:
+                        degreeDes = 10
 
                 degree[0] = degreeDes
                 #print(degree)
