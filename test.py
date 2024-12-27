@@ -14,7 +14,7 @@ max_rate = 270  # Maximum angular speed (degrees per second)
 
 steps = 10000  # Number of steps
 
-v = 2  # Constant speed of the object (units/s)
+v = 1  # Constant speed of the object (units/s)
 
 
 # Target angle (line direction is vertical, so 90°)
@@ -39,7 +39,7 @@ paths = []  # List to store paths for each starting position
 
 start_positions = [
 
-    {"x": 0.54, "y": 0.355, "angle": 120},
+    {"x": 0.54, "y": 0.355, "angle": 90},
     {"x": 0, "y": 12, "angle": 90},  # Starting above the line
 
     {"x": 0, "y": 4, "angle": 180},  # Starting above the line
@@ -63,7 +63,7 @@ def simulate_path(start_x, start_y, start_angle, max_rate, v, dt, steps, y_targe
         
 
         # Desired angle relative to the line
-        theta_desired = actual_target_angle + np.degrees(np.arctan2(d, v))
+        theta_desired = actual_target_angle + np.degrees(np.arctan2(d, v)) * 2
 
         # Compute angular error and handle wrapping
         theta_error = (theta_desired - angle) % 360

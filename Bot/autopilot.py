@@ -53,6 +53,8 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     startTime = time.perf_counter()
     dTime = startTime
 
+    rocket_dtime = 0
+
     multiplier = 1 # used to stretch the constant rate of change line in height to increase the turn rate (with the actual position numbers it's very small)
 
     enemies = {18: 'rocket', 19: 'red_dot', 20: 'plane', 21: 'heli', 22: 'truck_r', 24: 'truck', 26: 'tank_s', 28: 'tank', 30: 'unit'}
@@ -84,6 +86,8 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 dTime = time.perf_counter() - startTime
                 startTime = time.perf_counter()
 
+                rocket_dtime += dTime
+
                 # index = np.where(yolo[:, 6] == 0)[0]
                 # index = index[0] if len(index) > 0 else None
                 # if index is not None:
@@ -102,11 +106,13 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 line_height = 0.3 * multiplier
                 line_angle = convert_angle(degreeDes)
 
-                d = player_pos[1] - line_height if not revese else line_height - player_pos[1]  # Distance to line  # Distance to line
-                v = 0.125 # np.sqrt(player_pos[4] ** 2 + player_pos[5] ** 2)
+                d = player_pos[1] - line_height if not revese else line_height - player_pos[1]  # Distance to line
+                v = 0.01 # np.sqrt(player_pos[4] ** 2 + player_pos[5] ** 2)
 
                 # Desired angle relative to the line
                 theta_desired = line_angle + np.degrees(np.arctan2(d, v))
+
+                print(theta_desired)
 
                 # Compute angular error and handle wrapping
                 theta_error = (theta_desired - convert_angle(degree[0])) % 360
@@ -151,13 +157,25 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     if flightManeuver != "circle":
                         if enemyDegree > 60 and enemyDegree < 120:
                             flightManeuver = "direct"
+                            print("direct")
+                            # set degreeDes to enemyDegree but limit the turn rate
+                            theta_error = (enemyDegree - degreeDes) % 360
+                            if theta_error > 180:
+                                theta_error -= 360
+                            
+                            degreeDes = convert_angle(np.sign(theta_error) * min(max_rate * dTime, abs(theta_error)))
                         else:
-                            flightManeuver = "circle"
+                            if mid_pos(player_pos)[1] > 0.4:
+                                flightManeuver = "circle_reverse"
+                            else:
+                                flightManeuver = "circle"
                             lastCircleDirection = 90
 
                 if flightManeuver == "circle":
                     print("circle")
-                    lastCircleDirection += max_rate * dTime
+                    print(player_pos)
+                    print(lastCircleDirection)
+                    lastCircleDirection += 210 * dTime
                     if lastCircleDirection > 360:
                         lastCircleDirection -= 360
                         finishedCircle = True
@@ -166,24 +184,34 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                         finishedCircle = False
                         flightManeuver = "direct"
                     degreeDes = lastCircleDirection
-
-                elif flightManeuver == "direct":
-                    # set degreeDes to enemyDegree but limit the turn rate
-
-                    theta_error = (enemyDegree - degreeDes) % 360
-                    if theta_error > 180:
-                        theta_error -= 360
                     
-                    degreeDes = convert_angle(np.sign(theta_error) * min(max_rate * dTime, abs(theta_error)))
+                elif flightManeuver == "circle_reverse":
+                    print("circle_reverse")
+                    print(player_pos)
+                    print(lastCircleDirection)
+                    lastCircleDirection -= 210 * dTime
+                    if lastCircleDirection < 0:
+                        lastCircleDirection += 360
+                        finishedCircle = True
+
+                    if finishedCircle and lastCircleDirection < 70:
+                        finishedCircle = False
+                        flightManeuver = "direct"
+                    degreeDes = lastCircleDirection
+
 
                 if np.abs(degreeDes - enemyDegree) < 10 and enemyDegree != -1:
                     keyboard_button[0] = 1
 
+                if rocket_dtime > 1:
+                    keyboard_button[0] = 1
+                    if rocket_dtime > 1.1:
+                        rocket_dtime = 0
 
                 if degreeDes > 220 and degreeDes < 260:
                     keyboard_button[0] = 0
 
-                if player_pos[1] > 0.5:
+                if mid_pos(player_pos)[1] > 0.5:
                     print("Fallback")
                     print(player_pos)
 
@@ -202,6 +230,9 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 def convert_angle(angle: float):
     a = (-1 * angle + 90)
     return a % 360
+
+def mid_pos(object):
+    return [object[0] + object[2] / 2, object[1] + object[3] / 2]
 
 def predict_pos(object):
     return [1 - object[0] + object[2] / 2 + object[4], object[1] + object[3] / 2 + object[5]]
