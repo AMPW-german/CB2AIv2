@@ -80,7 +80,11 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
             index = np.where(yolo[:, 6] == 0)[0]
             index = index[0] if len(index) > 0 else None
             if index is not None:
+                print(f"Index: {yolo[index]}")
+                print(f"Index + 1: {yolo[index + 1]}")
                 player_pos = [x * multiplier for x in yolo[index][:6].copy()] if yolo[index][0] >= 0 else player_pos
+
+            print(player_pos)
 
             if not user_input[0]:
                 dTime = time.perf_counter() - startTime
@@ -111,8 +115,6 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 
                 # Desired angle relative to the line
                 theta_desired = line_angle + np.degrees(np.arctan2(d, v))
-
-                print(theta_desired)
 
                 # Compute angular error and handle wrapping
                 theta_error = (theta_desired - convert_angle(degree[0])) % 360
@@ -165,7 +167,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                             
                             degreeDes = convert_angle(np.sign(theta_error) * min(max_rate * dTime, abs(theta_error)))
                         else:
-                            if mid_pos(player_pos)[1] > 0.4:
+                            if player_pos[1] > 0.4:
                                 flightManeuver = "circle_reverse"
                             else:
                                 flightManeuver = "circle"
@@ -211,7 +213,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 if degreeDes > 220 and degreeDes < 260:
                     keyboard_button[0] = 0
 
-                if mid_pos(player_pos)[1] > 0.5:
+                if player_pos[1] > 0.5:
                     print("Fallback")
                     print(player_pos)
 
@@ -231,8 +233,5 @@ def convert_angle(angle: float):
     a = (-1 * angle + 90)
     return a % 360
 
-def mid_pos(object):
-    return [object[0] + object[2] / 2, object[1] + object[3] / 2]
-
 def predict_pos(object):
-    return [1 - object[0] + object[2] / 2 + object[4], object[1] + object[3] / 2 + object[5]]
+    return [1 - object[0] + object[4], object[1]+ object[5]]

@@ -37,7 +37,7 @@ def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape):
                 if res is None:
                     continue
 
-                clss = res.cls.tolist()
+                # print(res)
 
                 for i in range(len(res)):
                     #box = res[i].xyxy.tolist()[0]

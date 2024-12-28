@@ -7,5 +7,8 @@ names = {0: 'player', 1: 'base_tower', 2: 'base_fuel', 3: 'base_silos', 4: 'star
 
 print(list(names.values())[19:22] +  list(names.values())[22::2])
 
-model.track(r"videos\\2024-12-27 16-09-06.mkv", stream=False, persist=False, save=True, visualize=False, conf=0.64, device="cuda:0", verbose=False)
+res = model.predict(r"images\\DataSet0\\images\\1280.png", stream=False, save=False, visualize=False, show=True, conf=0.64, device="cuda:0", verbose=False)
+print(res[0].boxes)
+
+#model.track(r"videos\\2024-12-27 16-09-06.mkv", stream=False, persist=False, save=True, visualize=False, conf=0.64, device="cuda:0", verbose=False)
 #model.track(r"videos\\Testvideo_0.mov", imgsz = (900, 1600), visualize = False, save=True)
