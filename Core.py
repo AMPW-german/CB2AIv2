@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
     autoHotKeyPath = r"D:\\programms\\autohotkey\\UX\\"
     hotkeyPath = f"{autoHotKeyPath}AutoHotkeyUX.exe"
-    scriptPath = f"{autoHotKeyPath}yEr.ahk"
+    scriptPath = f".\\yEr.ahk"
     
     subprocess.Popen([hotkeyPath, scriptPath])
 
@@ -89,15 +89,10 @@ if __name__ == '__main__':
     processes.append(Process(target=Bot.video_tools.timer, args=(60, image_shm.name, image_shape, image_count_shm.name, done_shm.name,)))
     processes.append(Process(target=Bot.control.control_joystick, args=(degree_shm.name,)))
     # processes.append(Process(target=Bot.control.player_control, args=(degree_shm.name, 270,)))
-    processes.append(Process(target=Bot.yolo.track, args=(image_shm.name, image_shape, image_count_shm.name, yolo_shm.name, yolo_shape,)))
-    processes.append(Process(target=Bot.analyze_image.analyze_image, args=(image_shm.name, image_shape, image_count_shm.name, fuel_percent_shm.name, health_percent_shm.name, base_health_percent_shm.name, pause_shm.name, done_shm.name,)))
-    processes.append(Process(target=Bot.keyboard_controller.keyboard_exe, args=(keyboard_button_shm.name, keyboard_button_shape, pause_shm.name,)))
-    
+    processes.append(Process(target=Bot.yolo.track, args=(image_shm.name, image_shape, image_count_shm.name, yolo_shm.name, yolo_shape, done_shm.name, pause_shm.name,)))
+    processes.append(Process(target=Bot.analyze_image.analyze_image, args=(image_shm.name, image_shape, image_count_shm.name, fuel_percent_shm.name, health_percent_shm.name, base_health_percent_shm.name, done_shm.name, pause_shm.name,)))
+    processes.append(Process(target=Bot.keyboard_controller.keyboard_exe, args=(keyboard_button_shm.name, keyboard_button_shape, done_shm.name, pause_shm.name,)))
     processes.append(Process(target=Bot.autopilot.pilot, args=(image_count_shm.name, pause_shm.name, done_shm.name, user_input_shm.name, degree_shm.name, keyboard_button_shm.name, keyboard_button_shape, health_percent_shm.name, base_health_percent_shm.name, yolo_shm.name, yolo_shape,)))
-
-    # processes.append(Process(target=Bot.action_recorder.record, args=(image_count_shm.name, pause_shm.name, done_shm.name, user_input_shm.name, degree_shm.name, keyboard_button_shm.name, keyboard_button_shape, health_percent_shm.name, base_health_percent_shm.name, yolo_shm.name, yolo_shape,)))
-    
-    #processes.append(Process(target=Bot.access_test.access_image, args=(image_shm.name, image_shape, image_count_shm.name, yolo_shm.name, yolo_shape, done_shm.name,)))
 
     print("starting Processes")
 
@@ -122,7 +117,7 @@ if __name__ == '__main__':
     pause[0] = True
     print("ending loop")
 
-    time.sleep(5)
+    time.sleep(2)
 
     for p in processes:
         p.kill()

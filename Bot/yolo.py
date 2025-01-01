@@ -1,4 +1,4 @@
-def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape):
+def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape, done_name, pause_name):
     import multiprocessing.shared_memory as shared_memory
     from ultralytics import YOLO
     import numpy as np
@@ -18,12 +18,20 @@ def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape):
     image_count_shm = shared_memory.SharedMemory(name=image_count_name)
     image_count = np.ndarray((1,), dtype=np.uint32, buffer=image_count_shm.buf)
 
+    done_dtype = np.bool_
+    done_shm = shared_memory.SharedMemory(name=done_name)
+    done = np.ndarray((1,), dtype=done_dtype, buffer=done_shm.buf)
+
+    pause_dtype = np.bool_
+    pause_shm = shared_memory.SharedMemory(name=pause_name)
+    pause = np.ndarray((1,), dtype=pause_dtype, buffer=pause_shm.buf)
+
     image_count_old = image_count[0]
 
     old_tracks = yolo.copy()
 
     while 1:
-        if image_count[0] > image_count_old:
+        if image_count[0] > image_count_old and not pause[0]:
             image_count_old = image_count[0]
 
             #results = model.predict(image, stream=True, save=False, visualize=False, conf=0.64, device="cuda:0")
@@ -62,4 +70,6 @@ def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape):
                     yolo[i] = (box[0], box[1], box[2], box[3], xChange, yChange, res[i].cls[0], res[i].id[0] if res[i].id is not None else -1, track_count, res[i].conf[0])
                 old_tracks = yolo.copy()
         else:
+            if done[0]:
+                break
             time.sleep(0.001)

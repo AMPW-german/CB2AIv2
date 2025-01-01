@@ -70,6 +70,8 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     lastCircleDirection = 90
     finishedCircle = False
 
+    fire = False
+
     while 1:
         if done[0]:
             break
@@ -80,8 +82,6 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
             index = np.where(yolo[:, 6] == 0)[0]
             index = index[0] if len(index) > 0 else None
             if index is not None:
-                print(f"Index: {yolo[index]}")
-                print(f"Index + 1: {yolo[index + 1]}")
                 player_pos = [x * multiplier for x in yolo[index][:6].copy()] if yolo[index][0] >= 0 else player_pos
 
             print(player_pos)
@@ -91,12 +91,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 startTime = time.perf_counter()
 
                 rocket_dtime += dTime
-
-                # index = np.where(yolo[:, 6] == 0)[0]
-                # index = index[0] if len(index) > 0 else None
-                # if index is not None:
-                #     player_pos = [x * multiplier for x in yolo[index][:6].copy()] if yolo[index][0] >= 0 else player_pos
-
+                
                 if player_pos[0] < 0.1 * multiplier:
                     revese = False
                 elif player_pos[0] > 0.9 * multiplier:
@@ -203,15 +198,16 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 
 
                 if np.abs(degreeDes - enemyDegree) < 10 and enemyDegree != -1:
-                    keyboard_button[0] = 1
+                    fire = 1
 
                 if rocket_dtime > 1:
-                    keyboard_button[0] = 1
+                    fire = 1
                     if rocket_dtime > 1.1:
                         rocket_dtime = 0
 
-                if degreeDes > 220 and degreeDes < 260:
-                    keyboard_button[0] = 0
+                if not (degreeDes > 220 and degreeDes < 260):
+                    keyboard_button[0] = fire
+                    fire = 0
 
                 if player_pos[1] > 0.5:
                     print("Fallback")

@@ -60,8 +60,8 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
     img_cp = image.copy().astype(img_cp_dtype)
     
 
-    while 1:
-        if image_count[0] > image_count_old:
+    while 1:            
+        if image_count[0] > image_count_old and not pause[0]:
             image_count_old = image_count[0]
 
             img_cp = image.copy().astype(img_cp_dtype)
@@ -107,6 +107,8 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
                     pause[0] = True
 
         else:
+            if done[0]:
+                break
             time.sleep(0.005)
 
 
