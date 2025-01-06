@@ -47,7 +47,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     else:
         player_pos = (0.45, 0.2, 0.1, 0.1, 0, 0)
 
-    revese = False
+    reverse = False
     degreeDes = 90 # desired angle
 
     startTime = time.perf_counter()
@@ -66,6 +66,8 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 
     enemyDegree = -1 # angle of a line towards the enemy
 
+
+    flightManeuverList = ["circle_down", "circle_up", "circle_down_reverse", "circle_up_reverse",]
     flightManeuver = "direct"
     lastCircleDirection = 90
     finishedCircle = False
@@ -87,26 +89,34 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
             print(player_pos)
 
             if not user_input[0]:
+                lastDegreeDes = degreeDes
+
                 dTime = time.perf_counter() - startTime
                 startTime = time.perf_counter()
 
                 rocket_dtime += dTime
                 
-                if player_pos[0] < 0.1 * multiplier:
-                    revese = False
-                elif player_pos[0] > 0.9 * multiplier:
-                    revese = True
+                if player_pos[0] < 0.3:
+                    print("direction change: forward")
+                    reverse = False
+                elif player_pos[0] > 0.7:
+                    print("direction change: backward")
+                    reverse = True
 
-                if not revese:
+                if not reverse:
                     degreeDes = 90
                 else:
-                    degreeDes = 270
+                    if np.where(yolo[:, 6] == 1)[0].size > 0:
+                        reverse = False
+                        degreeDes = 90
+                    else:
+                        degreeDes = 270
 
                 line_height = 0.3 * multiplier
                 line_angle = convert_angle(degreeDes)
 
-                d = player_pos[1] - line_height if not revese else line_height - player_pos[1]  # Distance to line
-                v = 0.01 # np.sqrt(player_pos[4] ** 2 + player_pos[5] ** 2)
+                d = player_pos[1] - line_height if not reverse else line_height - player_pos[1]  # Distance to line
+                v = 0.01
 
                 # Desired angle relative to the line
                 theta_desired = line_angle + np.degrees(np.arctan2(d, v))
@@ -118,7 +128,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 
                 # Apply rate-limited angular adjustment
                 d_theta = np.sign(theta_error) * min(max_rate * dTime, abs(theta_error))
-                angle = d_theta if not revese else d_theta - 180
+                angle = d_theta if not reverse else d_theta - 180
 
                 if degree[0] * 1.01 < degreeDes or degree[0] * 0.99 > degreeDes:
                     degreeDes = convert_angle(angle)
@@ -151,10 +161,12 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     # theta has a range of -180 to +180
                     enemyDegree = convert_angle(theta if theta > 0 else theta + 360)
 
-                    if flightManeuver != "circle":
+                    if reverse:
+                        if enemy_p[0] > 0.6:
+                            reverse = False
+
+                    if flightManeuver not in flightManeuverList:
                         if enemyDegree > 60 and enemyDegree < 120:
-                            flightManeuver = "direct"
-                            print("direct")
                             # set degreeDes to enemyDegree but limit the turn rate
                             theta_error = (enemyDegree - degreeDes) % 360
                             if theta_error > 180:
@@ -162,17 +174,18 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                             
                             degreeDes = convert_angle(np.sign(theta_error) * min(max_rate * dTime, abs(theta_error)))
                         else:
-                            if player_pos[1] > 0.4:
-                                flightManeuver = "circle_reverse"
+                            if player_pos[1] > 0.5:
+                                flightManeuver = "circle_up"
                             else:
-                                flightManeuver = "circle"
+                                flightManeuver = "circle_down"
                             lastCircleDirection = 90
 
-                if flightManeuver == "circle":
-                    print("circle")
+                if flightManeuver == "circle_down":
+                    print("circle_down")
                     print(player_pos)
                     print(lastCircleDirection)
                     lastCircleDirection += 210 * dTime
+                    fire = 1
                     if lastCircleDirection > 360:
                         lastCircleDirection -= 360
                         finishedCircle = True
@@ -182,11 +195,12 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                         flightManeuver = "direct"
                     degreeDes = lastCircleDirection
                     
-                elif flightManeuver == "circle_reverse":
-                    print("circle_reverse")
+                elif flightManeuver == "circle_up":
+                    print("circle_up")
                     print(player_pos)
                     print(lastCircleDirection)
                     lastCircleDirection -= 210 * dTime
+                    fire = 1
                     if lastCircleDirection < 0:
                         lastCircleDirection += 360
                         finishedCircle = True
@@ -196,20 +210,54 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                         flightManeuver = "direct"
                     degreeDes = lastCircleDirection
 
+                elif flightManeuver == "circle_down_reverse":
+                    print("circle_down_reverse")
+                    print(player_pos)
+                    print(lastCircleDirection)
+                    lastCircleDirection -= 210 * dTime
+                    fire = 1
+                    if lastCircleDirection < 0:
+                        lastCircleDirection += 360
+                        finishedCircle = True
 
-                if np.abs(degreeDes - enemyDegree) < 10 and enemyDegree != -1:
+                    if finishedCircle and lastCircleDirection < 70:
+                        finishedCircle = False
+                        flightManeuver = "direct"
+                    degreeDes = lastCircleDirection
+
+                elif flightManeuver == "circle_up_reverse":
+                    print("circle_up_reverse")
+                    print(player_pos)
+                    print(lastCircleDirection)
+                    lastCircleDirection += 210 * dTime
+                    fire = 1
+                    if lastCircleDirection > 360:
+                        lastCircleDirection -= 360
+                        finishedCircle = True
+
+                    if finishedCircle and lastCircleDirection > 20:
+                        finishedCircle = False
+                        flightManeuver = "direct"
+                    degreeDes = lastCircleDirection
+
+
+                if np.abs(degreeDes - enemyDegree) < 10 and enemyDegree != -1 and flightManeuver == "direct":
                     fire = 1
 
                 if rocket_dtime > 1:
-                    fire = 1
+                    if not reverse:
+                        fire = 1
                     if rocket_dtime > 1.1:
                         rocket_dtime = 0
 
-                if not (degreeDes > 220 and degreeDes < 260):
+                if not (lastDegreeDes > 220 and lastDegreeDes < 320):
                     keyboard_button[0] = fire
                     fire = 0
+                else:
+                    keyboard_button[0] = 0
+                    fire = 0
 
-                if player_pos[1] > 0.5:
+                if player_pos[1] > 0.5 and flightManeuver == "direct":
                     print("Fallback")
                     print(player_pos)
 
