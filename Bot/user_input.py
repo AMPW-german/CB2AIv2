@@ -61,7 +61,7 @@ def user_controller(pause_name, done_name, user_input_name, degree_name, rate, k
         dt = current_time - last_time  # Calculate delta time in seconds
         last_time = current_time
 
-        if user_input and not pause:
+        if user_input[0] and not pause[0]:
             # Check if left or right arrow key is pressed
             if keyboard.is_pressed('left'):
                 degree -= rate * dt
@@ -74,3 +74,6 @@ def user_controller(pause_name, done_name, user_input_name, degree_name, rate, k
             
             degree_shm.buf[:8] = struct.pack('d', degree)
             time.sleep(0.01)
+
+        if done[0]:
+            break

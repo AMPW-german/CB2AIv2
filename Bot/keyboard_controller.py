@@ -24,7 +24,7 @@ def keyboard_exe(keyboard_button_name, keyboard_button_shape, done_name, pause_n
     print(key_list)
 
     while 1:
-        if not pause:
+        if not pause[0]:
             for i in range(len(keyboard_button)):
                 if keyboard_button[i]:
                     keyboard.press_and_release(key_list[i])

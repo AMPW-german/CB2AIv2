@@ -37,7 +37,7 @@ if __name__ == '__main__':
     # x, y, length, height, xChange, yChange, class id, tracking id, track amount, confidence
     # all x/y values are normalized in to a range between 0 and 1. Only the x/y change vars have a range of -1 to 1
     
-    # Data type choices
+    # Data types
     image_dtype = np.uint8
     mouse_click_dtype = np.uint16
     keyboard_button_dtype = np.bool_

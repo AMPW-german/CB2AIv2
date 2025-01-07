@@ -59,12 +59,10 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 
     enemies = {18: 'rocket', 19: 'red_dot', 20: 'plane', 21: 'heli', 22: 'truck_r', 24: 'truck', 26: 'tank_s', 28: 'tank', 30: 'unit'}
 
-    enemiesDone = np.ndarray((100,), np.uint32)
-    enemiesDone[:] = np.iinfo(np.uint32).max
-
     max_rate = 250
 
     enemyDegree = -1 # angle of a line towards the enemy
+    line_height = 0.4
 
 
     flightManeuverList = ["circle_down", "circle_up", "circle_down_reverse", "circle_up_reverse",]
@@ -82,9 +80,14 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
             image_count_old = image_count[0]
 
             index = np.where(yolo[:, 6] == 0)[0]
-            index = index[0] if len(index) > 0 else None
-            if index is not None:
-                player_pos = [x * multiplier for x in yolo[index][:6].copy()] if yolo[index][0] >= 0 else player_pos
+            # indexs = index[0] if len(index) > 0 else None
+
+            # select the index where the yolo array has the smallest value in the 7th index and the 7th index is not -1
+            indexs = (index[np.argmin(filtered)] if (filtered := yolo[index, 7][yolo[index, 7] != -1]).size > 0 else None) if len(index) > 0 else None
+
+            if indexs is not None:
+                print(yolo[indexs])
+                player_pos = [x * multiplier for x in yolo[indexs][:6].copy()] if yolo[indexs][0] >= 0 else player_pos
 
             print(player_pos)
 
@@ -112,7 +115,6 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     else:
                         degreeDes = 270
 
-                line_height = 0.3 * multiplier
                 line_angle = convert_angle(degreeDes)
 
                 d = player_pos[1] - line_height if not reverse else line_height - player_pos[1]  # Distance to line
@@ -257,7 +259,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     keyboard_button[0] = 0
                     fire = 0
 
-                if player_pos[1] > 0.5 and flightManeuver == "direct":
+                if player_pos[1] > 0.6 and flightManeuver == "direct":
                     print("Fallback")
                     print(player_pos)
 

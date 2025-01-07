@@ -49,7 +49,7 @@ def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape, done
 
                 for i in range(len(res)):
                     #box = res[i].xyxy.tolist()[0]
-                    box = res[i].xywhn.tolist()[0] # normalized bounding boxes with width and height, I hope the ai understands it better than xyxy
+                    box = res[i].xywhn.tolist()[0]
 
                     if res is None:
                         continue
