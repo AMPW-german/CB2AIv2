@@ -24,6 +24,27 @@ def check_pixels(image, xStart, yStart, xRange, yRange, controllist):
 
     return counter, percent
 
+
+bottomColorList = ((74, 113, 173), (82, 130, 173), (99, 138, 181), (66, 109, 165), (132, 166, 198), (189, 215, 222), (206, 219, 231), (222, 235, 247))
+color_tolerance = 20
+
+def check_bottom(image):
+    image_bottom = image[-1]
+
+    trueCount = 0
+    count = 0
+
+    for r, g, b in image_bottom:
+        for r1, g1, b1 in bottomColorList:
+            if (r1 - color_tolerance) <= r <= (r1 + color_tolerance) and (g1 - color_tolerance) <= g <= (g1 + color_tolerance) and (b1 - color_tolerance) <= b <= (b1 + color_tolerance):
+                trueCount += 1
+                break
+        count += 1
+    
+    percent = trueCount / count
+    return percent, trueCount, count
+        
+
 def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, health_percent_name, base_health_percent_name, pause_name, done_name):
     import multiprocessing.shared_memory as shared_memory
     import numpy as np
@@ -106,6 +127,9 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
                 if counter / len(list2check) >= 0.5:
                     pause[0] = True
 
+            
+            check_bottom(img_cp)
+
         else:
             if done[0]:
                 break
@@ -141,6 +165,18 @@ points_of_interest = [
         [1430, 176, 41, 85, 114]
     ]
 ] #x, y, r, g, b
+
+if __name__ == "__main__":
+    import cv2
+    import os
+
+    for file in os.listdir(r"images\\DataSet0\\images"):
+        img = cv2.imread(r"images\\DataSet0\\images\\" + file)
+        im = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) 
+        cv2.imshow(f"img: {check_bottom(im)}", img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
 
 # left, top:     262, 13
 # width, height: 131, 20

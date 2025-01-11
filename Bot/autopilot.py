@@ -63,12 +63,15 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 
     enemyDegree = -1 # angle of a line towards the enemy
     line_height = 0.4
+    circleTolerance = 1
 
 
     flightManeuverList = ["circle_down", "circle_up", "circle_down_reverse", "circle_up_reverse",]
     flightManeuver = "direct"
     lastCircleDirection = 90
     finishedCircle = False
+    circleFinishedDTime = 0
+    directionChange = False
 
     fire = False
 
@@ -98,13 +101,21 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 startTime = time.perf_counter()
 
                 rocket_dtime += dTime
+                circleFinishedDTime += dTime
+
+                if directionChange and circleFinishedDTime > 1:
+                    directionChange = False
                 
-                if player_pos[0] < 0.3:
+                if player_pos[0] < 0.3 and flightManeuver not in flightManeuverList and not directionChange:
                     print("direction change: forward")
                     reverse = False
-                elif player_pos[0] > 0.7:
+                    directionChange = True
+                    flightManeuver = "circle_up"
+                elif player_pos[0] > 0.7 and flightManeuver not in flightManeuverList and not directionChange:
                     print("direction change: backward")
                     reverse = True
+                    directionChange = True
+                    flightManeuver = "circle_up_reverse"
 
                 if not reverse:
                     degreeDes = 90
@@ -121,7 +132,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 v = 0.01
 
                 # Desired angle relative to the line
-                theta_desired = line_angle + np.degrees(np.arctan2(d, v))
+                theta_desired = line_angle + np.degrees(np.arctan2(d, v)) * 2
 
                 # Compute angular error and handle wrapping
                 theta_error = (theta_desired - convert_angle(degree[0])) % 360
@@ -130,10 +141,11 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 
                 # Apply rate-limited angular adjustment
                 d_theta = np.sign(theta_error) * min(max_rate * dTime, abs(theta_error))
-                angle = d_theta if not reverse else d_theta - 180
+                angle = convert_angle(d_theta if not reverse else d_theta - 180)
 
-                if degree[0] * 1.01 < degreeDes or degree[0] * 0.99 > degreeDes:
-                    degreeDes = convert_angle(angle)
+                if not (degree[0] + circleTolerance > angle and degree[0] - circleTolerance < angle):
+                    degreeDes = angle
+
 
                 enemy_pos = [-1, -1, -1, -1, -1, -1,]
 
@@ -176,7 +188,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                             
                             degreeDes = convert_angle(np.sign(theta_error) * min(max_rate * dTime, abs(theta_error)))
                         else:
-                            if player_pos[1] > 0.5:
+                            if player_pos[1] > 0.3:
                                 flightManeuver = "circle_up"
                             else:
                                 flightManeuver = "circle_down"
@@ -193,6 +205,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                         finishedCircle = True
 
                     if finishedCircle and lastCircleDirection > 20:
+                        circleFinishedDTime = 0
                         finishedCircle = False
                         flightManeuver = "direct"
                     degreeDes = lastCircleDirection
@@ -208,6 +221,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                         finishedCircle = True
 
                     if finishedCircle and lastCircleDirection < 70:
+                        circleFinishedDTime = 0
                         finishedCircle = False
                         flightManeuver = "direct"
                     degreeDes = lastCircleDirection
@@ -223,6 +237,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                         finishedCircle = True
 
                     if finishedCircle and lastCircleDirection < 70:
+                        circleFinishedDTime = 0
                         finishedCircle = False
                         flightManeuver = "direct"
                     degreeDes = lastCircleDirection
@@ -238,6 +253,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                         finishedCircle = True
 
                     if finishedCircle and lastCircleDirection > 20:
+                        circleFinishedDTime = 0
                         finishedCircle = False
                         flightManeuver = "direct"
                     degreeDes = lastCircleDirection
@@ -269,6 +285,10 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                         degreeDes = 10
 
                 degree[0] = degreeDes
+                print()
+                print(directionChange)
+                print(flightManeuver)
+                print(circleFinishedDTime)
                 #print(degree)
 
         else:
