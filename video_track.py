@@ -11,113 +11,113 @@ model = YOLO(r"runs\\detect\\train\\weights\\best.pt")
 # res = model.predict(r"images\\DataSet0\\images\\1280.png", stream=False, save=False, visualize=False, show=True, conf=0.64, device="cuda:0", verbose=False)
 # print(res[0].boxes)
 
-#model.track(r".\\videos\\2025-01-07 12-52-57.mkv", stream=False, persist=False, save=True, visualize=False, conf=0.64, device="cuda:0", verbose=False)
+model.track(r".\\videos\\2025-01-12 21-19-41.mkv", stream=False, persist=False, save=True, visualize=False, conf=0.64, device="cuda:0", verbose=True)
 #model.track(r"videos\\Testvideo_0.mov", imgsz = (900, 1600), visualize = False, save=True)
 
 
-def split_video_to_frames(video_path):
-    # Open the video file
-    video = cv2.VideoCapture(video_path)
+# def split_video_to_frames(video_path):
+#     # Open the video file
+#     video = cv2.VideoCapture(video_path)
 
-    # Create an empty list to store the frames
-    frames = []
+#     # Create an empty list to store the frames
+#     frames = []
 
-    # Read and append each frame of the video to the list
-    while video.isOpened():
-        ret, frame = video.read()
-        if not ret:
-            break
-        frames.append(frame)
+#     # Read and append each frame of the video to the list
+#     while video.isOpened():
+#         ret, frame = video.read()
+#         if not ret:
+#             break
+#         frames.append(frame)
 
-    # Release resources
-    video.release()
+#     # Release resources
+#     video.release()
 
-    # Return the list of frames
-    return frames
+#     # Return the list of frames
+#     return frames
 
-def create_video_from_frames(frames, output_path, frame_rate):
-    frameCount = len(frames)
-    print(frameCount)
-    count = 0
+# def create_video_from_frames(frames, output_path, frame_rate):
+#     frameCount = len(frames)
+#     print(frameCount)
+#     count = 0
 
-    # Get frame dimensions
-    frame_height, frame_width, _ = frames[0].shape
+#     # Get frame dimensions
+#     frame_height, frame_width, _ = frames[0].shape
 
-    # Create a VideoWriter object to save the frames as a video
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter(output_path, fourcc, frame_rate,
-                          (frame_width, frame_height))
+#     # Create a VideoWriter object to save the frames as a video
+#     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+#     out = cv2.VideoWriter(output_path, fourcc, frame_rate,
+#                           (frame_width, frame_height))
 
-    # Write each frame to the video
-    for frame in frames:
-        count += 1
-        out.write(frame)
+#     # Write each frame to the video
+#     for frame in frames:
+#         count += 1
+#         out.write(frame)
 
-    # Release resources
-    out.release()
-    cv2.destroyAllWindows()
+#     # Release resources
+#     out.release()
+#     cv2.destroyAllWindows()
 
-video_path = r".\\videos\\2025-01-07 12-52-57.mkv"
+# video_path = r".\\videos\\2025-01-07 12-52-57.mkv"
 
-video_frames = split_video_to_frames(video_path)
-frames2 = []
+# video_frames = split_video_to_frames(video_path)
+# frames2 = []
 
-yolo_arr = np.ndarray([100, 10,], dtype=np.float32)
-old_tracks = np.ndarray([100, 10,], dtype=np.float32)
+# yolo_arr = np.ndarray([100, 10,], dtype=np.float32)
+# old_tracks = np.ndarray([100, 10,], dtype=np.float32)
 
-yolo_arr[:] = -1
-old_tracks[:] = -1
+# yolo_arr[:] = -1
+# old_tracks[:] = -1
 
-for frame in video_frames:
-    x = 0
-    results = model.track(frame, stream=True, persist=True, save=False, visualize=False, conf=0.64, device="cuda:0", verbose=False)
+# for frame in video_frames:
+#     x = 0
+#     results = model.track(frame, stream=True, persist=True, save=False, visualize=False, conf=0.64, device="cuda:0", verbose=False)
 
-    for result in results:
-        yolo_arr[:] = -1
+#     for result in results:
+#         yolo_arr[:] = -1
 
-        new_frame = result.plot()
-        frames2.append(new_frame)
+#         new_frame = result.plot()
+#         frames2.append(new_frame)
 
-        x+=1
-        # print(x, end="\r")
+#         x+=1
+#         # print(x, end="\r")
 
-        res = result.cpu().numpy().boxes
-        if res is None:
-            continue
+#         res = result.cpu().numpy().boxes
+#         if res is None:
+#             continue
 
-        # print(res)
+#         # print(res)
 
-        for i in range(len(res)):
-            #box = res[i].xyxy.tolist()[0]
-            box = res[i].xywhn.tolist()[0]
+#         for i in range(len(res)):
+#             #box = res[i].xyxy.tolist()[0]
+#             box = res[i].xywhn.tolist()[0]
 
-            if res is None:
-                continue
+#             if res is None:
+#                 continue
 
-            xChange = 0
-            yChange = 0
+#             xChange = 0
+#             yChange = 0
 
-            index = np.where(old_tracks[:, 7] == res[i].id)[0]
-            index = index[0] if len(index) > 0 else None
+#             index = np.where(old_tracks[:, 7] == res[i].id)[0]
+#             index = index[0] if len(index) > 0 else None
 
-            track_count = 0
-            if index is not None:
-                xChange = ((box[0] + (box[2] / 2)) - (old_tracks[index][0] + (old_tracks[index][2] / 2)))
-                yChange = ((box[1] + (box[3] / 2)) - (old_tracks[index][1] + (old_tracks[index][3] / 2)))
-                track_count = old_tracks[index][8] + 1
+#             track_count = 0
+#             if index is not None:
+#                 xChange = ((box[0] + (box[2] / 2)) - (old_tracks[index][0] + (old_tracks[index][2] / 2)))
+#                 yChange = ((box[1] + (box[3] / 2)) - (old_tracks[index][1] + (old_tracks[index][3] / 2)))
+#                 track_count = old_tracks[index][8] + 1
 
-            # x, y, length, height, xChange, yChange, class id, tracking id, track amount, confidence
-            yolo_arr[i] = (box[0], box[1], box[2], box[3], xChange, yChange, res[i].cls[0], res[i].id[0] if res[i].id is not None else -1, track_count, res[i].conf[0])
-        old_tracks = yolo_arr.copy()
+#             # x, y, length, height, xChange, yChange, class id, tracking id, track amount, confidence
+#             yolo_arr[i] = (box[0], box[1], box[2], box[3], xChange, yChange, res[i].cls[0], res[i].id[0] if res[i].id is not None else -1, track_count, res[i].conf[0])
+#         old_tracks = yolo_arr.copy()
 
-        index = np.where(yolo_arr[:, 6] == 0)[0]
-        indexs = index[0] if len(index) > 0 else None
-        if len(index) > 1:
-            print(index)
-        if indexs is not None:
-            player_pos = [x for x in yolo_arr[indexs][:6].copy()] if yolo_arr[indexs][0] >= 0 else player_pos
-            print(player_pos)
-            print(yolo_arr)
+#         index = np.where(yolo_arr[:, 6] == 0)[0]
+#         indexs = index[0] if len(index) > 0 else None
+#         if len(index) > 1:
+#             print(index)
+#         if indexs is not None:
+#             player_pos = [x for x in yolo_arr[indexs][:6].copy()] if yolo_arr[indexs][0] >= 0 else player_pos
+#             print(player_pos)
+#             print(yolo_arr)
 
 
-create_video_from_frames(frames2, video_path, 60)
+# create_video_from_frames(frames2, video_path, 60)

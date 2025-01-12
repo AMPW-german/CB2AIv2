@@ -3,7 +3,7 @@ import multiprocessing.shared_memory as shared_memory
 from time import sleep
 import time
 
-def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name, keyboard_button_name, keyboard_button_shape, health_percent_name, base_health_percent_name, yolo_name, yolo_shape):
+def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name, keyboard_button_name, keyboard_button_shape, health_percent_name, base_health_percent_name, yolo_name, yolo_shape, ground_name):
     
     image_count_dtype = np.uint32
     pause_dtype = np.bool_
@@ -14,6 +14,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     health_percent_dtype = np.float32
     base_health_percent_dtype = np.float32
     yolo_dtype = np.float32
+    ground_dtype = np.bool_
 
     image_count_shm = shared_memory.SharedMemory(name=image_count_name)
     pause_shm = shared_memory.SharedMemory(name=pause_name)
@@ -24,7 +25,8 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     health_percent_shm = shared_memory.SharedMemory(name=health_percent_name)
     base_health_percent_shm = shared_memory.SharedMemory(name=base_health_percent_name)
     yolo_shm = shared_memory.SharedMemory(name=yolo_name)
-    
+    ground_shm = shared_memory.SharedMemory(name=ground_name)
+
     image_count = np.ndarray((1,), dtype=image_count_dtype, buffer=image_count_shm.buf)
     pause = np.ndarray((1,), dtype=pause_dtype, buffer=pause_shm.buf)
     done = np.ndarray((1,), dtype=done_dtype, buffer=done_shm.buf)
@@ -35,13 +37,14 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     base_health_percent = np.ndarray((1,), dtype=base_health_percent_dtype, buffer=base_health_percent_shm.buf)
     image_count_old = image_count[0]
     yolo = np.ndarray(yolo_shape, dtype=yolo_dtype, buffer=yolo_shm.buf)
+    ground = np.ndarray((1,), dtype=ground_dtype, buffer=ground_shm.buf)
 
-    index = np.where(yolo[:, 6] == 0)[0]
-    if index is not None:
-        if len(index) >= 1:
-            index = index[0]
-            player_pos = yolo[index][:4]
-            yolo[index][:] = -1
+    indexes = np.where(yolo[:, 6] == 0)[0]
+    if indexes is not None:
+        if len(indexes) >= 1:
+            indexes = indexes[0]
+            player_pos = yolo[indexes][:4]
+            yolo[indexes][:] = -1
         else:
             player_pos = (0.45, 0.2, 0.1, 0.1, 0, 0)
     else:
@@ -82,23 +85,27 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
         if image_count[0] > image_count_old and not pause[0]:
             image_count_old = image_count[0]
 
-            index = np.where(yolo[:, 6] == 0)[0]
+            indexes = np.where(yolo[:, 6] == 0)[0]
             # indexs = index[0] if len(index) > 0 else None
 
             # select the index where the yolo array has the smallest value in the 7th index and the 7th index is not -1
-            indexs = (index[np.argmin(filtered)] if (filtered := yolo[index, 7][yolo[index, 7] != -1]).size > 0 else None) if len(index) > 0 else None
+            index = (indexes[np.argmin(filtered)] if (filtered := yolo[indexes, 7][yolo[indexes, 7] != -1]).size > 0 else None) if len(indexes) > 0 else None
 
-            if indexs is not None:
-                print(yolo[indexs])
-                player_pos = [x * multiplier for x in yolo[indexs][:6].copy()] if yolo[indexs][0] >= 0 else player_pos
+            if index is not None:
+                print(index)
+                print(yolo[index])
+                player_pos = [x * multiplier for x in yolo[index][:6].copy()] if yolo[index][0] >= 0 else player_pos
 
-            print(player_pos)
 
+            dTime = time.perf_counter() - startTime
+            startTime = time.perf_counter()            
             if not user_input[0]:
                 lastDegreeDes = degreeDes
 
-                dTime = time.perf_counter() - startTime
-                startTime = time.perf_counter()
+                if not ground[0]:
+                    line_height = 0.9
+                else:
+                    line_height = 0.5
 
                 rocket_dtime += dTime
                 circleFinishedDTime += dTime
@@ -106,16 +113,20 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 if directionChange and circleFinishedDTime > 1:
                     directionChange = False
                 
-                if player_pos[0] < 0.3 and flightManeuver not in flightManeuverList and not directionChange:
+                if player_pos[0] < 0.3 and flightManeuver not in flightManeuverList and not directionChange and reverse:
                     print("direction change: forward")
                     reverse = False
                     directionChange = True
                     flightManeuver = "circle_up"
-                elif player_pos[0] > 0.7 and flightManeuver not in flightManeuverList and not directionChange:
+                    lastCircleDirection = -90
+
+                elif player_pos[0] > 0.7 and flightManeuver not in flightManeuverList and not directionChange and not reverse:
                     print("direction change: backward")
                     reverse = True
                     directionChange = True
                     flightManeuver = "circle_up_reverse"
+                    lastCircleDirection = 450
+
 
                 if not reverse:
                     degreeDes = 90
@@ -188,74 +199,78 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                             
                             degreeDes = convert_angle(np.sign(theta_error) * min(max_rate * dTime, abs(theta_error)))
                         else:
-                            if player_pos[1] > 0.3:
-                                flightManeuver = "circle_up"
-                            else:
-                                flightManeuver = "circle_down"
+                            # if player_pos[1] > 0.3:
+                            flightManeuver = "circle_up"
+                            # else:
+                            #     flightManeuver = "circle_down"
                             lastCircleDirection = 90
 
                 if flightManeuver == "circle_down":
+                    circleFinishedDTime = 0
                     print("circle_down")
                     print(player_pos)
                     print(lastCircleDirection)
-                    lastCircleDirection += 210 * dTime
+                    lastCircleDirection = degree[0] + 210 * dTime
                     fire = 1
                     if lastCircleDirection > 360:
                         lastCircleDirection -= 360
                         finishedCircle = True
 
-                    if finishedCircle and lastCircleDirection > 20:
+                    if finishedCircle and lastCircleDirection > 70:
                         circleFinishedDTime = 0
                         finishedCircle = False
                         flightManeuver = "direct"
                     degreeDes = lastCircleDirection
                     
                 elif flightManeuver == "circle_up":
+                    circleFinishedDTime = 0
                     print("circle_up")
-                    print(player_pos)
                     print(lastCircleDirection)
-                    lastCircleDirection -= 210 * dTime
+                    lastCircleDirection = degree[0] - 210 * dTime
                     fire = 1
                     if lastCircleDirection < 0:
                         lastCircleDirection += 360
                         finishedCircle = True
 
-                    if finishedCircle and lastCircleDirection < 70:
+                    if finishedCircle and lastCircleDirection < 110:
                         circleFinishedDTime = 0
                         finishedCircle = False
                         flightManeuver = "direct"
                     degreeDes = lastCircleDirection
 
                 elif flightManeuver == "circle_down_reverse":
+                    circleFinishedDTime = 0
                     print("circle_down_reverse")
                     print(player_pos)
                     print(lastCircleDirection)
-                    lastCircleDirection -= 210 * dTime
+                    lastCircleDirection = degree[0] - 210 * dTime
                     fire = 1
                     if lastCircleDirection < 0:
                         lastCircleDirection += 360
                         finishedCircle = True
 
-                    if finishedCircle and lastCircleDirection < 70:
+                    if finishedCircle and lastCircleDirection < 290:
                         circleFinishedDTime = 0
                         finishedCircle = False
                         flightManeuver = "direct"
                     degreeDes = lastCircleDirection
 
                 elif flightManeuver == "circle_up_reverse":
+                    circleFinishedDTime = 0
                     print("circle_up_reverse")
                     print(player_pos)
                     print(lastCircleDirection)
-                    lastCircleDirection += 210 * dTime
+                    lastCircleDirection = degree[0] + 210 * dTime
                     fire = 1
                     if lastCircleDirection > 360:
                         lastCircleDirection -= 360
                         finishedCircle = True
+                        print("change")
 
-                    if finishedCircle and lastCircleDirection > 20:
-                        circleFinishedDTime = 0
+                    if finishedCircle and lastCircleDirection > 250:
                         finishedCircle = False
                         flightManeuver = "direct"
+                        print("finished")
                     degreeDes = lastCircleDirection
 
 
@@ -275,17 +290,18 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     keyboard_button[0] = 0
                     fire = 0
 
-                if player_pos[1] > 0.6 and flightManeuver == "direct":
-                    print("Fallback")
-                    print(player_pos)
+                # if player_pos[1] > 0.6 and flightManeuver == "direct":
+                #     print("Fallback")
+                #     print(player_pos)
 
-                    if degreeDes > 180:
-                        degreeDes = 350
-                    else:
-                        degreeDes = 10
+                #     if degreeDes > 180:
+                #         degreeDes = 350
+                #     else:
+                #         degreeDes = 10
 
                 degree[0] = degreeDes
                 print()
+                print(reverse)
                 print(directionChange)
                 print(flightManeuver)
                 print(circleFinishedDTime)

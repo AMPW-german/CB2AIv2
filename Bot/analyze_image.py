@@ -45,7 +45,7 @@ def check_bottom(image):
     return percent, trueCount, count
         
 
-def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, health_percent_name, base_health_percent_name, pause_name, done_name):
+def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, health_percent_name, base_health_percent_name, pause_name, done_name, ground_name):
     import multiprocessing.shared_memory as shared_memory
     import numpy as np
     import time
@@ -56,6 +56,7 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
     base_health_percent_dtype = np.float32
     pause_dtype = np.bool_
     done_dtype = np.bool_
+    ground_dtype = np.bool_
 
     image_shm = shared_memory.SharedMemory(name=image_name)
     image = np.ndarray(image_shape, dtype=image_dtype, buffer=image_shm.buf)
@@ -71,6 +72,9 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
     fuel_percent = np.ndarray((1,), dtype=fuel_percent_dtype, buffer=fuel_percent_shm.buf)
     health_percent = np.ndarray((1,), dtype=health_percent_dtype, buffer=health_percent_shm.buf)
     base_health_percent = np.ndarray((1,), dtype=base_health_percent_dtype, buffer=base_health_percent_shm.buf)
+
+    ground_shm = shared_memory.SharedMemory(name=ground_name)
+    ground = np.ndarray((1,), dtype=ground_dtype, buffer=ground_shm.buf)
 
     pause_shm = shared_memory.SharedMemory(name=pause_name)
     done_shm = shared_memory.SharedMemory(name=done_name)
@@ -128,7 +132,10 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
                     pause[0] = True
 
             
-            check_bottom(img_cp)
+            if (check_bottom(img_cp) > 0.5):
+                ground[0] = True
+            else:
+                ground[0] = False
 
         else:
             if done[0]:

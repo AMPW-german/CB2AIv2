@@ -49,6 +49,7 @@ if __name__ == '__main__':
     pause_dtype = np.bool_
     done_dtype = np.bool_
     user_input_dtype = np.bool_
+    ground_dtype = np.bool_
 
     # Create shared memory blocks
     image_shm = shared_memory.SharedMemory(create=True, size=int(np.prod(image_shape) * np.dtype(image_dtype).itemsize))
@@ -63,6 +64,7 @@ if __name__ == '__main__':
     pause_shm = shared_memory.SharedMemory(create=True, size=np.dtype(pause_dtype).itemsize)
     done_shm = shared_memory.SharedMemory(create=True, size=np.dtype(done_dtype).itemsize)
     user_input_shm = shared_memory.SharedMemory(create=True, size=np.dtype(user_input_dtype).itemsize)
+    ground_shm = shared_memory.SharedMemory(create=True, size=np.dtype(ground_dtype).itemsize)
 
     # Create numpy arrays in main process
     image = np.ndarray(image_shape, dtype=image_dtype, buffer=image_shm.buf)
@@ -81,6 +83,7 @@ if __name__ == '__main__':
     pause = np.ndarray((1,), dtype=pause_dtype, buffer=pause_shm.buf)
     done = np.ndarray((1,), dtype=pause_dtype, buffer=done_shm.buf)
     user_input = np.ndarray((1,), dtype=user_input_dtype, buffer=user_input_shm.buf)
+    ground = np.ndarray((1,), dtype=ground_dtype, buffer=ground_shm.buf)
 
     lock = Lock()
     processes = []
@@ -90,9 +93,9 @@ if __name__ == '__main__':
     processes.append(Process(target=Bot.control.control_joystick, args=(degree_shm.name,)))
     # processes.append(Process(target=Bot.control.player_control, args=(degree_shm.name, 270,)))
     processes.append(Process(target=Bot.yolo.track, args=(image_shm.name, image_shape, image_count_shm.name, yolo_shm.name, yolo_shape, done_shm.name, pause_shm.name,)))
-    processes.append(Process(target=Bot.analyze_image.analyze_image, args=(image_shm.name, image_shape, image_count_shm.name, fuel_percent_shm.name, health_percent_shm.name, base_health_percent_shm.name, done_shm.name, pause_shm.name,)))
+    processes.append(Process(target=Bot.analyze_image.analyze_image, args=(image_shm.name, image_shape, image_count_shm.name, fuel_percent_shm.name, health_percent_shm.name, base_health_percent_shm.name, done_shm.name, pause_shm.name, ground_shm.name)))
     processes.append(Process(target=Bot.keyboard_controller.keyboard_exe, args=(keyboard_button_shm.name, keyboard_button_shape, done_shm.name, pause_shm.name,)))
-    processes.append(Process(target=Bot.autopilot.pilot, args=(image_count_shm.name, pause_shm.name, done_shm.name, user_input_shm.name, degree_shm.name, keyboard_button_shm.name, keyboard_button_shape, health_percent_shm.name, base_health_percent_shm.name, yolo_shm.name, yolo_shape,)))
+    processes.append(Process(target=Bot.autopilot.pilot, args=(image_count_shm.name, pause_shm.name, done_shm.name, user_input_shm.name, degree_shm.name, keyboard_button_shm.name, keyboard_button_shape, health_percent_shm.name, base_health_percent_shm.name, yolo_shm.name, yolo_shape,  ground_shm.name,)))
 
     print("starting Processes")
 
