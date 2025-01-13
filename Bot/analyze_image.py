@@ -132,7 +132,9 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
                     pause[0] = True
 
             
-            if (check_bottom(img_cp) > 0.5):
+            ground_val = check_bottom(img_cp)
+            print("Ground: " + ground_val)
+            if (ground_val > 0.5):
                 ground[0] = True
             else:
                 ground[0] = False

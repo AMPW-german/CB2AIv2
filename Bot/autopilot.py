@@ -103,9 +103,10 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 lastDegreeDes = degreeDes
 
                 if not ground[0]:
+                    print("No ground")
                     line_height = 0.9
                 else:
-                    line_height = 0.5
+                    line_height = 0.4
 
                 rocket_dtime += dTime
                 circleFinishedDTime += dTime
@@ -117,14 +118,14 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     print("direction change: forward")
                     reverse = False
                     directionChange = True
-                    flightManeuver = "circle_up"
+                    flightManeuver = "circle_down"
                     lastCircleDirection = -90
 
                 elif player_pos[0] > 0.7 and flightManeuver not in flightManeuverList and not directionChange and not reverse:
                     print("direction change: backward")
                     reverse = True
                     directionChange = True
-                    flightManeuver = "circle_up_reverse"
+                    flightManeuver = "circle_down_reverse"
                     lastCircleDirection = 450
 
 
@@ -133,9 +134,15 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 else:
                     if np.where(yolo[:, 6] == 1)[0].size > 0:
                         reverse = False
-                        degreeDes = 90
+                        if not ground[0]:
+                            degreeDes = 135
+                        else:
+                            degreeDes = 90
                     else:
-                        degreeDes = 270
+                        if not ground[0]:
+                            degreeDes = 235
+                        else:
+                            degreeDes = 270
 
                 line_angle = convert_angle(degreeDes)
 
