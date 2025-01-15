@@ -25,7 +25,16 @@ def check_pixels(image, xStart, yStart, xRange, yRange, controllist):
     return counter, percent
 
 
-bottomColorList = ((74, 113, 173), (82, 130, 173), (99, 138, 181), (66, 109, 165), (132, 166, 198), (189, 215, 222), (206, 219, 231), (222, 235, 247))
+bottomColorList = (
+    (74, 113, 173),
+    (82, 130, 173),
+    (99, 138, 181),
+    (66, 109, 165),
+    (132, 166, 198),
+    (189, 215, 222),
+    (206, 219, 231),
+    (222, 235, 247)
+    )
 color_tolerance = 20
 
 def check_bottom(image):
@@ -34,6 +43,7 @@ def check_bottom(image):
     trueCount = 0
     count = 0
 
+    # print(f"color: {image[-1][0]}")
     for r, g, b in image_bottom:
         for r1, g1, b1 in bottomColorList:
             if (r1 - color_tolerance) <= r <= (r1 + color_tolerance) and (g1 - color_tolerance) <= g <= (g1 + color_tolerance) and (b1 - color_tolerance) <= b <= (b1 + color_tolerance):
@@ -49,6 +59,8 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
     import multiprocessing.shared_memory as shared_memory
     import numpy as np
     import time
+
+    print("analyze Image")
 
     image_dtype = np.uint8
     fuel_percent_dtype = np.float32
@@ -82,14 +94,24 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
     done = np.ndarray((1,), dtype=done_dtype, buffer=done_shm.buf)
 
     img_cp_dtype = np.int16
-    img_cp = image.copy().astype(img_cp_dtype)
+    img_cp = image.astype(img_cp_dtype)
     
 
-    while 1:            
+    while 1:
+        if done[0]:
+            break
+
         if image_count[0] > image_count_old and not pause[0]:
             image_count_old = image_count[0]
 
-            img_cp = image.copy().astype(img_cp_dtype)
+            img_cp = image.astype(img_cp_dtype)
+
+            ground_val = check_bottom(img_cp)
+            # print(f"Ground: {ground_val[0]}")
+            if (ground_val[0] > 0.3):
+                ground[0] = True
+            else:
+                ground[0] = False
 
             # check fuel
             xStart = 262
@@ -131,17 +153,8 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
                 if counter / len(list2check) >= 0.5:
                     pause[0] = True
 
-            
-            ground_val = check_bottom(img_cp)
-            print("Ground: " + ground_val)
-            if (ground_val > 0.5):
-                ground[0] = True
-            else:
-                ground[0] = False
 
         else:
-            if done[0]:
-                break
             time.sleep(0.005)
 
 

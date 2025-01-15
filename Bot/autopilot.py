@@ -92,8 +92,6 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
             index = (indexes[np.argmin(filtered)] if (filtered := yolo[indexes, 7][yolo[indexes, 7] != -1]).size > 0 else None) if len(indexes) > 0 else None
 
             if index is not None:
-                print(index)
-                print(yolo[index])
                 player_pos = [x * multiplier for x in yolo[index][:6].copy()] if yolo[index][0] >= 0 else player_pos
 
 

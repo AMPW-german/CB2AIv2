@@ -52,12 +52,20 @@ def timer(fps: int, image_name, image_shape, image_count_name, done_name):
     # start = time.perf_counter()
     # fps_count = 0
 
+    import cv2
+
     while 1:
         if (done[0]):
             camera.release()
             break
 
         img = camera.get_latest_frame()
+        
+        # img =  cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        # cv2.imshow(f"img:", img)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+
         np.copyto(image, img)
         image_count[0] += 1
 
