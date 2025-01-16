@@ -3,7 +3,7 @@ import multiprocessing.shared_memory as shared_memory
 from time import sleep
 import time
 
-def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name, keyboard_button_name, keyboard_button_shape, health_percent_name, base_health_percent_name, yolo_name, yolo_shape, ground_name):
+def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name, keyboard_button_name, keyboard_button_shape, health_percent_name, base_health_percent_name, fuel_percent_name, yolo_name, yolo_shape, ground_name):
     
     image_count_dtype = np.uint32
     pause_dtype = np.bool_
@@ -13,6 +13,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     keyboard_button_dtype = np.bool_
     health_percent_dtype = np.float32
     base_health_percent_dtype = np.float32
+    fuel_percent_dtype = np.float32
     yolo_dtype = np.float32
     ground_dtype = np.bool_
 
@@ -24,6 +25,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     keyboard_button_shm = shared_memory.SharedMemory(name=keyboard_button_name)
     health_percent_shm = shared_memory.SharedMemory(name=health_percent_name)
     base_health_percent_shm = shared_memory.SharedMemory(name=base_health_percent_name)
+    fuel_percent_shm = shared_memory.SharedMemory(name=fuel_percent_name)
     yolo_shm = shared_memory.SharedMemory(name=yolo_name)
     ground_shm = shared_memory.SharedMemory(name=ground_name)
 
@@ -35,6 +37,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     keyboard_button = np.ndarray(keyboard_button_shape, dtype=keyboard_button_dtype, buffer=keyboard_button_shm.buf)
     health_percent = np.ndarray((1,), dtype=health_percent_dtype, buffer=health_percent_shm.buf)
     base_health_percent = np.ndarray((1,), dtype=base_health_percent_dtype, buffer=base_health_percent_shm.buf)
+    fuel_percent = np.ndarray((1,), dtype=fuel_percent_dtype, buffer=fuel_percent_shm.buf)
     image_count_old = image_count[0]
     yolo = np.ndarray(yolo_shape, dtype=yolo_dtype, buffer=yolo_shm.buf)
     ground = np.ndarray((1,), dtype=ground_dtype, buffer=ground_shm.buf)
@@ -75,6 +78,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     finishedCircle = False
     circleFinishedDTime = 0
     directionChange = False
+    refuel = False
 
     fire = False
 
@@ -98,6 +102,12 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
             dTime = time.perf_counter() - startTime
             startTime = time.perf_counter()            
             if not user_input[0]:
+                print(fuel_percent[0])
+                if fuel_percent[0] < 0.3:
+                    refuel = True
+                else:
+                    refuel = False
+                
                 lastDegreeDes = degreeDes
 
                 if not ground[0]:
@@ -119,7 +129,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     flightManeuver = "circle_down"
                     lastCircleDirection = -90
 
-                elif player_pos[0] > 0.7 and flightManeuver not in flightManeuverList and not directionChange and not reverse:
+                elif (player_pos[0] > 0.7 or refuel) and flightManeuver not in flightManeuverList and not directionChange and not reverse:
                     print("direction change: backward")
                     reverse = True
                     directionChange = True
@@ -148,7 +158,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 v = 0.01
 
                 # Desired angle relative to the line
-                theta_desired = line_angle + np.degrees(np.arctan2(d, v)) * 2
+                theta_desired = line_angle + np.degrees(np.arctan2(d, v)) * 4
 
                 # Compute angular error and handle wrapping
                 theta_error = (theta_desired - convert_angle(degree[0])) % 360
@@ -305,11 +315,6 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 #         degreeDes = 10
 
                 degree[0] = degreeDes
-                print()
-                print(reverse)
-                print(directionChange)
-                print(flightManeuver)
-                print(circleFinishedDTime)
                 #print(degree)
 
         else:
