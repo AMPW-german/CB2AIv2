@@ -26,7 +26,7 @@ xStart = 262
 yStart = 13
 xRange = 131
 yRange = 20
-image = cv2.imread(r".\\images\\test\\3.png")
+image = cv2.imread(r".\\images\\test\\4.png")
 pixels = get_Pixels(image, xStart, yStart, xRange, yRange)
 
 print("[")

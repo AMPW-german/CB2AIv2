@@ -10,22 +10,19 @@ def check_pixels(image, xStart, yStart, xRange, yRange, controllist):
     counter = 0
     pixels = xRange * yRange
 
-    print(image[yStart, xStart])
-
     while  yStart < yEnd:
         xStart = xSave
         while xStart  < xEnd:
-            b, g, r = image[yStart, xStart]
+            r, g, b = image[yStart, xStart]
             b = np.int16(b)
             g = np.int16(g)
             r = np.int16(r)
-            print(f"r: {r}, g: {g}, b: {b}, x: {xStart}, y: {yStart}, controllist: {controllist [yStart - ySave] [xStart - xSave]}")
+        #     print(f"r: {r}, g: {g}, b: {b}, x: {xStart}, y: {yStart}, controllist: {controllist [yStart - ySave] [xStart - xSave]}")
             if (
                 (r - tolerance) <= controllist [yStart - ySave] [xStart - xSave] [0] <= (r + tolerance) and 
                 (g - tolerance) <= controllist [yStart - ySave] [xStart - xSave] [1] <= (g + tolerance) and 
                 (b - tolerance) <= controllist [yStart - ySave] [xStart - xSave] [2] <= (b + tolerance)):
                 counter += 1       
-                print(True)
             xStart += 1
         yStart += 1
 
@@ -43,7 +40,8 @@ bottomColorList = (
     (189, 215, 222),
     (206, 219, 231),
     (222, 235, 247)
-    )
+)
+
 color_tolerance = 20
 
 def check_bottom(image):
@@ -3013,7 +3011,7 @@ fuel_list_2d = [
                 [np.uint8(24), np.uint8(255), np.uint8(16), 391, 33],
                 [np.uint8(90), np.uint8(203), np.uint8(90), 392, 33],
                 [np.uint8(74), np.uint8(89), np.uint8(74), 393, 33],
-        ],
+        ]
 ]
 
 
@@ -14535,7 +14533,7 @@ if __name__ == "__main__":
     yStart = 13
     x_range = 131
     y_range = 20
-    img = cv2.imread(r".\\images\\test\\0.png")
+    img = cv2.imread(r".\\images\\test\\4.png")
     count, fuel_percent = check_pixels(img, xStart, yStart, x_range, y_range, fuel_list_2d)
     print(fuel_percent)
 

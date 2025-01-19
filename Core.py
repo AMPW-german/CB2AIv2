@@ -43,6 +43,7 @@ if __name__ == '__main__':
     keyboard_button_dtype = np.bool_
     yolo_dtype = np.float32
     degree_dtype = np.double
+    throttle_dtype = np.double
     fuel_percent_dtype = np.float32
     health_percent_dtype = np.float32
     base_health_percent_dtype = np.float32
@@ -58,6 +59,7 @@ if __name__ == '__main__':
     keyboard_button_shm = shared_memory.SharedMemory(create=True, size=int(np.prod(keyboard_button_shape) * np.dtype(keyboard_button_dtype).itemsize))
     yolo_shm = shared_memory.SharedMemory(create=True, size=int(np.prod(yolo_shape) * np.dtype(yolo_dtype).itemsize))
     degree_shm = shared_memory.SharedMemory(create=True, size=np.dtype(degree_dtype).itemsize)
+    throttle_shm = shared_memory.SharedMemory(create=True, size=np.dtype(throttle_dtype).itemsize)
     fuel_percent_shm = shared_memory.SharedMemory(create=True, size=np.dtype(fuel_percent_dtype).itemsize)
     health_percent_shm = shared_memory.SharedMemory(create=True, size=np.dtype(health_percent_dtype).itemsize)
     base_health_percent_shm = shared_memory.SharedMemory(create=True, size=np.dtype(base_health_percent_dtype).itemsize)
@@ -77,6 +79,7 @@ if __name__ == '__main__':
     yolo_data[:] = -1
     yolo_data[:, 8] = 0
     degree = np.ndarray((1,), dtype=degree_dtype, buffer=degree_shm.buf)
+    throttle = np.ndarray((1,), dtype=throttle_dtype, buffer=throttle_shm.buf)
     fuel_percent = np.ndarray((1,), dtype=fuel_percent_dtype, buffer=fuel_percent_shm.buf)
     health_percent = np.ndarray((1,), dtype=health_percent_dtype, buffer=health_percent_shm.buf)
     base_health_percent = np.ndarray((1,), dtype=base_health_percent_dtype, buffer=base_health_percent_shm.buf)
@@ -84,6 +87,9 @@ if __name__ == '__main__':
     done = np.ndarray((1,), dtype=pause_dtype, buffer=done_shm.buf)
     user_input = np.ndarray((1,), dtype=user_input_dtype, buffer=user_input_shm.buf)
     ground = np.ndarray((1,), dtype=ground_dtype, buffer=ground_shm.buf)
+
+    degree[0] = 90
+    throttle[0] = 1
 
     pause[0] = False
     done[0] = False
@@ -95,12 +101,12 @@ if __name__ == '__main__':
 
     processes.append(Process(target=Bot.user_input.user_controller, args=(pause_shm.name, done_shm.name, user_input_shm.name, degree_shm.name, 270, keyboard_button_shm.name, keyboard_button_shape,)))
     processes.append(Process(target=Bot.video_tools.timer, args=(60, image_shm.name, image_shape, image_count_shm.name, done_shm.name,)))
-    processes.append(Process(target=Bot.control.control_joystick, args=(degree_shm.name,)))
+    processes.append(Process(target=Bot.control.control_mouse, args=(degree_shm.name, throttle_shm.name,)))
     # processes.append(Process(target=Bot.control.player_control, args=(degree_shm.name, 270,)))
     processes.append(Process(target=Bot.yolo.track, args=(image_shm.name, image_shape, image_count_shm.name, yolo_shm.name, yolo_shape, done_shm.name, pause_shm.name,)))
     processes.append(Process(target=Bot.analyze_image.analyze_image, args=(image_shm.name, image_shape, image_count_shm.name, fuel_percent_shm.name, health_percent_shm.name, base_health_percent_shm.name, pause_shm.name, done_shm.name, ground_shm.name)))
     processes.append(Process(target=Bot.keyboard_controller.keyboard_exe, args=(keyboard_button_shm.name, keyboard_button_shape, done_shm.name, pause_shm.name,)))
-    processes.append(Process(target=Bot.autopilot.pilot, args=(image_count_shm.name, pause_shm.name, done_shm.name, user_input_shm.name, degree_shm.name, keyboard_button_shm.name, keyboard_button_shape, health_percent_shm.name, base_health_percent_shm.name, fuel_percent_shm.name, yolo_shm.name, yolo_shape,  ground_shm.name,)))
+    processes.append(Process(target=Bot.autopilot.pilot, args=(image_count_shm.name, pause_shm.name, done_shm.name, user_input_shm.name, degree_shm.name, throttle_shm.name, keyboard_button_shm.name, keyboard_button_shape, health_percent_shm.name, base_health_percent_shm.name, fuel_percent_shm.name, yolo_shm.name, yolo_shape,  ground_shm.name,)))
 
     print("starting Processes")
 

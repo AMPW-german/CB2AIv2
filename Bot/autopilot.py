@@ -3,13 +3,14 @@ import multiprocessing.shared_memory as shared_memory
 from time import sleep
 import time
 
-def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name, keyboard_button_name, keyboard_button_shape, health_percent_name, base_health_percent_name, fuel_percent_name, yolo_name, yolo_shape, ground_name):
+def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name, throttle_name, keyboard_button_name, keyboard_button_shape, health_percent_name, base_health_percent_name, fuel_percent_name, yolo_name, yolo_shape, ground_name):
     
     image_count_dtype = np.uint32
     pause_dtype = np.bool_
     done_dtype = np.bool_
     user_input_dtype = np.bool_
     degree_dtype = np.double
+    throttle_dtype = np.double
     keyboard_button_dtype = np.bool_
     health_percent_dtype = np.float32
     base_health_percent_dtype = np.float32
@@ -22,6 +23,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     done_shm = shared_memory.SharedMemory(name=done_name)
     user_input_shm = shared_memory.SharedMemory(name=user_input_name)
     degree_shm = shared_memory.SharedMemory(name=degree_name)
+    throttle_shm = shared_memory.SharedMemory(name=throttle_name)
     keyboard_button_shm = shared_memory.SharedMemory(name=keyboard_button_name)
     health_percent_shm = shared_memory.SharedMemory(name=health_percent_name)
     base_health_percent_shm = shared_memory.SharedMemory(name=base_health_percent_name)
@@ -34,6 +36,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     done = np.ndarray((1,), dtype=done_dtype, buffer=done_shm.buf)
     user_input = np.ndarray((1,), dtype=user_input_dtype, buffer=user_input_shm.buf)
     degree = np.ndarray((1,), dtype=degree_dtype, buffer=degree_shm.buf)
+    throttle = np.ndarray((1,), dtype=throttle_dtype, buffer=throttle_shm.buf)
     keyboard_button = np.ndarray(keyboard_button_shape, dtype=keyboard_button_dtype, buffer=keyboard_button_shm.buf)
     health_percent = np.ndarray((1,), dtype=health_percent_dtype, buffer=health_percent_shm.buf)
     base_health_percent = np.ndarray((1,), dtype=base_health_percent_dtype, buffer=base_health_percent_shm.buf)
@@ -79,6 +82,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     circleFinishedDTime = 0
     directionChange = False
     refuel = False
+    landing = False
 
     fire = False
 
@@ -102,9 +106,10 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
             dTime = time.perf_counter() - startTime
             startTime = time.perf_counter()            
             if not user_input[0]:
-                print(fuel_percent[0])
+
                 if fuel_percent[0] < 0.3:
                     refuel = True
+                    print("refuel")
                 else:
                     refuel = False
                 
@@ -136,21 +141,16 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     flightManeuver = "circle_down_reverse"
                     lastCircleDirection = 450
 
-
                 if not reverse:
                     degreeDes = 90
                 else:
                     if np.where(yolo[:, 6] == 1)[0].size > 0:
-                        reverse = False
-                        if not ground[0]:
-                            degreeDes = 135
+                        if refuel:
+                            landing = True
+                            print("landing")
                         else:
-                            degreeDes = 90
-                    else:
-                        if not ground[0]:
-                            degreeDes = 235
-                        else:
-                            degreeDes = 270
+                            reverse = False
+                    degreeDes = 270
 
                 line_angle = convert_angle(degreeDes)
 
@@ -172,6 +172,10 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 if not (degree[0] + circleTolerance > angle and degree[0] - circleTolerance < angle):
                     degreeDes = angle
 
+                if refuel and landing:
+                    degreeDes = 270
+                    throttle[0] = 0.2
+                    print("0 throttle")
 
                 enemy_pos = [-1, -1, -1, -1, -1, -1,]
 
@@ -190,7 +194,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 
                 enemyDegree = -1
 
-                if enemy_pos[0] != -1:
+                if enemy_pos[0] != -1 and not refuel:
                     enemy_p = predict_pos(enemy_pos)
                     player_p = predict_pos(player_pos)
                     # https://stackoverflow.com/questions/9614109/how-to-calculate-an-angle-from-points
@@ -305,14 +309,19 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     keyboard_button[0] = 0
                     fire = 0
 
-                # if player_pos[1] > 0.6 and flightManeuver == "direct":
-                #     print("Fallback")
-                #     print(player_pos)
+                if not ground[0] and not reverse:
+                        degreeDes = 135
+                elif not ground[0]:
+                    degreeDes = 235
 
-                #     if degreeDes > 180:
-                #         degreeDes = 350
-                #     else:
-                #         degreeDes = 10
+                if player_pos[1] > 0.6 and flightManeuver == "direct":
+                    print("Fallback")
+                    print(player_pos)
+
+                    if degreeDes > 180:
+                        degreeDes = 350
+                    else:
+                        degreeDes = 10
 
                 degree[0] = degreeDes
                 #print(degree)

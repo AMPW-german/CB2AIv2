@@ -1,3 +1,4 @@
+import PIL.Image
 import pygetwindow as gw
 import numpy as np
 import time
@@ -52,7 +53,18 @@ def timer(fps: int, image_name, image_shape, image_count_name, done_name):
     # start = time.perf_counter()
     # fps_count = 0
 
+    time.sleep(2)
+
     import cv2
+
+    img = camera.get_latest_frame()
+    
+    # im =  cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    # cv2.imshow(f"img:", im)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+
+    # cv2.imwrite(r".\\images\\test\\4.png", im)
 
     while 1:
         if (done[0]):

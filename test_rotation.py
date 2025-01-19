@@ -1,6 +1,6 @@
 import time
 import keyboard
-from Bot.control import control_joystick, preCalculate
+from Bot.control import control_mouse, preCalculate
 from Bot.video_tools import take_pictures
 
 import time
@@ -33,7 +33,7 @@ try:
 
         if keyboard.is_pressed('up'):
             #image, window_pos = take_pictures("LDPlayer-2")
-            control_joystick(x)
+            control_mouse(x)
 
         # Print the value of x (Optional: You can display it in any way you want)
         print(f"x: {x:.2f}", end="\r")  # Using `end="\r"` to overwrite the same line

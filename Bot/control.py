@@ -14,7 +14,6 @@ num_angles = 360 * 10**precision  # Total number of angles based on precision
 # Create ctypes arrays to hold the sine and cosine values
 sine_values = (ctypes.c_float * num_angles)()
 cosine_values = (ctypes.c_float * num_angles)()
-degree_dtype = np.double
 
 def preCalculate():
     global sine_values
@@ -43,13 +42,28 @@ def get_sin_cos(degree):
     else:
         raise IndexError("Index out of bounds for the sine/cosine arrays.")
 
-def control_joystick(degree_shm_name):
+def get_throttle_position(percent):
+    x = 1460
+
+    y_bottom = 373
+    y_range = 173
+
+    return x, int(y_bottom - y_range * percent)
+
+def control_mouse(degree_name, throttle_name):
     global sine_values
     global cosine_values
     preCalculate()
-    degree_shm = shared_memory.SharedMemory(name=degree_shm_name)
+    
+    degree_dtype = np.double
+    degree_shm = shared_memory.SharedMemory(name=degree_name)
     degree = np.ndarray((1,), dtype=degree_dtype, buffer=degree_shm.buf)
-    # rate = 270
+    
+    throttle_dtype = np.double
+    throttle_shm = shared_memory.SharedMemory(name=throttle_name)
+    throttle = np.ndarray((1,), dtype=throttle_dtype, buffer=throttle_shm.buf)
+    throttle_old = throttle[0]
+    throttle_change = False
 
     last_time = time.time()
 
@@ -60,49 +74,20 @@ def control_joystick(degree_shm_name):
 
         if (keyboard.is_pressed('up')):
 
-            """
-            actual degree = 180
-            degree = 270
-            ad - d < d - ad -> left
-
-            actual degree = 270
-            degree = 180
-            ad - d > d - ad -> right
-            """
-            # if actual_degree - degree < degree - actual_degree: # left
-            #     actual_degree -= rate * dt
-            #     if actual_degree < 0:
-            #         actual_degree = 359 - int(actual_degree / 360)*actual_degree
-                    
-            # if actual_degree - degree > degree - actual_degree: # rigth
-            #     actual_degree += rate * dt
-            #     if actual_degree >= 360:
-            #         actual_degree -= int(actual_degree / 360)*360
-
-            pyautogui.mouseDown(sine_values[int(degree * 10**precision)], cosine_values[int(degree * 10**precision)])
+            if throttle[0] != throttle_old:
+                print("Throttle")
+                if not throttle_change:
+                    print("Throttle change")
+                    throttle_change = True
+                    x, y = get_throttle_position(0.5)
+                    pyautogui.mouseDown(x, y)
+                else:
+                    print("throttle final")
+                    throttle_change = False
+                    x, y = get_throttle_position(throttle[0])
+                    pyautogui.mouseDown(x, y)
+                    throttle_old = throttle[0]
+            else:
+                pyautogui.mouseDown(sine_values[int(degree * 10**precision)], cosine_values[int(degree * 10**precision)])
         else:
             pyautogui.mouseUp()
-
-def player_control(degree_shm_name, rate):
-    last_time = time.time()  # To calculate the time delta
-
-    degree_shm = shared_memory.SharedMemory(name=degree_shm_name)
-
-    while 1:
-        degree = np.ndarray((1,), dtype=degree_dtype, buffer=degree_shm.buf)
-        current_time = time.time()
-        dt = current_time - last_time  # Calculate delta time in seconds
-        last_time = current_time
-
-        # Check if left or right arrow key is pressed
-        if keyboard.is_pressed('left'):
-            degree -= rate * dt
-            if degree < 0:
-                degree = 359 - int(degree / 360)*degree
-        if keyboard.is_pressed('right'):
-            degree += rate * dt
-            if degree >= 360:
-                degree -= int(degree / 360)*360
-        
-        degree_shm.buf[:8] = struct.pack('d', degree)
-        time.sleep(0.01)
