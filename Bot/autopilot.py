@@ -83,6 +83,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     directionChange = False
     refuel = False
     landing = False
+    throttle50 = 0
 
     fire = False
 
@@ -91,6 +92,9 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
             break
         
         if image_count[0] > image_count_old and not pause[0]:
+            if not landing:
+                throttle[0] = 1
+
             image_count_old = image_count[0]
 
             indexes = np.where(yolo[:, 6] == 0)[0]
@@ -107,7 +111,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
             startTime = time.perf_counter()            
             if not user_input[0]:
 
-                if fuel_percent[0] < 0.3:
+                if fuel_percent[0] < 0.8:
                     refuel = True
                     print("refuel")
                 else:
@@ -116,7 +120,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 lastDegreeDes = degreeDes
 
                 if not ground[0]:
-                    print("No ground")
+                    # print("No ground")
                     line_height = 0.9
                 else:
                     line_height = 0.4
@@ -128,14 +132,14 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     directionChange = False
                 
                 if player_pos[0] < 0.3 and flightManeuver not in flightManeuverList and not directionChange and reverse:
-                    print("direction change: forward")
+                    # print("direction change: forward")
                     reverse = False
                     directionChange = True
                     flightManeuver = "circle_down"
                     lastCircleDirection = -90
 
                 elif (player_pos[0] > 0.7 or refuel) and flightManeuver not in flightManeuverList and not directionChange and not reverse:
-                    print("direction change: backward")
+                    # print("direction change: backward")
                     reverse = True
                     directionChange = True
                     flightManeuver = "circle_down_reverse"
@@ -174,8 +178,13 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 
                 if refuel and landing:
                     degreeDes = 270
-                    throttle[0] = 0.2
-                    print("0 throttle")
+                    if throttle50 <= 4:
+                        throttle[0] = 0.5
+                        throttle50 += 1
+                        print("50 throttle")
+                    else:
+                        throttle[0] = 0.1
+                        print("0 throttle")
 
                 enemy_pos = [-1, -1, -1, -1, -1, -1,]
 
@@ -226,9 +235,6 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 
                 if flightManeuver == "circle_down":
                     circleFinishedDTime = 0
-                    print("circle_down")
-                    print(player_pos)
-                    print(lastCircleDirection)
                     lastCircleDirection = degree[0] + 210 * dTime
                     fire = 1
                     if lastCircleDirection > 360:
@@ -243,8 +249,6 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     
                 elif flightManeuver == "circle_up":
                     circleFinishedDTime = 0
-                    print("circle_up")
-                    print(lastCircleDirection)
                     lastCircleDirection = degree[0] - 210 * dTime
                     fire = 1
                     if lastCircleDirection < 0:
@@ -259,9 +263,6 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 
                 elif flightManeuver == "circle_down_reverse":
                     circleFinishedDTime = 0
-                    print("circle_down_reverse")
-                    print(player_pos)
-                    print(lastCircleDirection)
                     lastCircleDirection = degree[0] - 210 * dTime
                     fire = 1
                     if lastCircleDirection < 0:
@@ -276,20 +277,15 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 
                 elif flightManeuver == "circle_up_reverse":
                     circleFinishedDTime = 0
-                    print("circle_up_reverse")
-                    print(player_pos)
-                    print(lastCircleDirection)
                     lastCircleDirection = degree[0] + 210 * dTime
                     fire = 1
                     if lastCircleDirection > 360:
                         lastCircleDirection -= 360
                         finishedCircle = True
-                        print("change")
 
                     if finishedCircle and lastCircleDirection > 250:
                         finishedCircle = False
                         flightManeuver = "direct"
-                        print("finished")
                     degreeDes = lastCircleDirection
 
 

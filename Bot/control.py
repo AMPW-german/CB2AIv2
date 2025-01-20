@@ -15,15 +15,15 @@ num_angles = 360 * 10**precision  # Total number of angles based on precision
 sine_values = (ctypes.c_float * num_angles)()
 cosine_values = (ctypes.c_float * num_angles)()
 
+program_name = "LDPlayer-2"
+window = gw.getWindowsWithTitle(program_name)[0]  # Assumes the program is open and window is available
+crop_area = {'left': 1, 'top': 34, 'right': 1, 'bottom': 1}  # Adjust as needed
+left = window.left + crop_area['left']
+top = window.top + crop_area['top']
+
 def preCalculate():
     global sine_values
     global cosine_values
-
-    program_name = "LDPlayer-2"
-    window = gw.getWindowsWithTitle(program_name)[0]  # Assumes the program is open and window is available
-    crop_area = {'left': 1, 'top': 34, 'right': 1, 'bottom': 1}  # Adjust as needed
-    left = window.left + crop_area['left']
-    top = window.top + crop_area['top']
 
     # Fill the sine_values and cosine_values arrays with precomputed values
     for deg in range(num_angles):
@@ -43,10 +43,11 @@ def get_sin_cos(degree):
         raise IndexError("Index out of bounds for the sine/cosine arrays.")
 
 def get_throttle_position(percent):
-    x = 1460
+    print(f"left: {left}, top: {top}")
+    x = 1460 + left
 
-    y_bottom = 373
-    y_range = 173
+    y_bottom = 373 + top
+    y_range = 173 
 
     return x, int(y_bottom - y_range * percent)
 
@@ -74,20 +75,12 @@ def control_mouse(degree_name, throttle_name):
 
         if (keyboard.is_pressed('up')):
 
-            if throttle[0] != throttle_old:
-                print("Throttle")
-                if not throttle_change:
-                    print("Throttle change")
-                    throttle_change = True
-                    x, y = get_throttle_position(0.5)
-                    pyautogui.mouseDown(x, y)
-                else:
-                    print("throttle final")
-                    throttle_change = False
-                    x, y = get_throttle_position(throttle[0])
-                    pyautogui.mouseDown(x, y)
+                if throttle_old != throttle[0]:
+                    print(f"throttle: {throttle[0]}, throttle_old: {throttle_old}")
                     throttle_old = throttle[0]
-            else:
+                    x, y = get_throttle_position(throttle_old)
+                    pyautogui.mouseDown(x, y)
+
                 pyautogui.mouseDown(sine_values[int(degree * 10**precision)], cosine_values[int(degree * 10**precision)])
         else:
             pyautogui.mouseUp()
