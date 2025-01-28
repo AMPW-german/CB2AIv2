@@ -30,4 +30,4 @@ def split_yolo_dataset(dataset_path, output_path, train_ratio=0.8, val_ratio=0.1
     copy_files(val_images, 'val')
     copy_files(test_images, 'test')
 
-split_yolo_dataset(r'images\\DataSet0', r'dataset0', train_ratio=0.8, val_ratio=0.1, test_ratio=0.1)
+split_yolo_dataset(r'images\\DataSet1', r'dataset1', train_ratio=0.8, val_ratio=0.1, test_ratio=0.1)

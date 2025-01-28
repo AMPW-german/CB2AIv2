@@ -1,10 +1,10 @@
 # Path to dataset directories
-train: D:/CB2AIv2/dataset0/images/train # Train dataset directory
-val: D:/CB2AIv2/dataset0/images/val     # Validation dataset directory
-test: D:/CB2AIv2/dataset0/images/test   # Optional, Test dataset directory
+train: D:/CB2AIv2/dataset1/images/train # Train dataset directory
+val: D:/CB2AIv2/dataset1/images/val     # Validation dataset directory
+test: D:/CB2AIv2/dataset1/images/test   # Optional, Test dataset directory
 
 # Number of classes
-nc: 32  # Number of object classes
+nc: 37  # Number of object classes
 
 # Class names
 names: [
@@ -39,5 +39,10 @@ names: [
     'tank',
     'tank_d',
     'unit',
-    'unit_d'
+    'unit_d',
+    'ship_big',
+    'ship',
+    'landing_ship',
+    'iceberg',
+    'fuel_barrels',
 ]

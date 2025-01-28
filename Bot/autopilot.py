@@ -87,6 +87,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     landing = False
     throttle50 = 0
     start = False
+    start_dtime = 0
 
     fire = False
 
@@ -131,13 +132,14 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     refuel = False
                     landing = False
                     print("refuel done")
-                    throttle50 = 0
-                    throttle[0] = 0.5
                     start = True                        
-                    degreeDes = 90
+                    degreeDes = 70
                     degree[0] = degreeDes
                     reverse = False
                     time.sleep(1)
+                    throttle50 = 0
+                    throttle[0] = 0.5
+                    start_dtime = 0
                 
                 lastDegreeDes = degreeDes
 
@@ -147,15 +149,21 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 if refuel:
                     line_height = 0.6
                 else:
-                    line_height = 0.4
+                    line_height = 0.3
 
                 rocket_dtime += dTime
                 circleFinishedDTime += dTime
+                start_dtime += dTime
+
+                if start_dtime < 8:
+                    continue
+                else:
+                    start = False
 
                 if directionChange and circleFinishedDTime > 1:
                     directionChange = False
                 
-                if player_pos[0] < 0.3 and flightManeuver not in flightManeuverList and not directionChange and reverse or reverseChange:
+                if player_pos[0] < 0.3 and flightManeuver not in flightManeuverList and not directionChange and reverse or reverseChange and not refuel and not landing:
                     print("direction change: forward")
                     reverse = False
                     directionChange = True
@@ -164,7 +172,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     reverseChange = False
                     notReverseChange = False
 
-                elif (player_pos[0] > 0.8 or refuel) and flightManeuver not in flightManeuverList and not directionChange and not reverse or notReverseChange:
+                elif (player_pos[0] > 0.8 or refuel) and flightManeuver not in flightManeuverList and not directionChange and not reverse or notReverseChange and not landing:
                     print("direction change: backward")
                     print(player_pos)
                     reverse = True
@@ -344,7 +352,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 elif not ground[0] and flightManeuver == "direct":
                     degreeDes = 235
 
-                if (player_pos[1] > 0.55 or degreeDes > 135 and degreeDes < 235 and flightManeuver not in flightManeuverList) and not landing and not start:
+                if (player_pos[1] > 0.5 or degreeDes > 135 and degreeDes < 235 and flightManeuver not in flightManeuverList) and not landing and not start:
                     print("Fallback")
                     print(player_pos)
 
