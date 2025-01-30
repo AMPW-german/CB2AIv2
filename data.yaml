@@ -38,7 +38,7 @@ names: [
     'tank_s_d',
     'tank',
     'tank_d',
-    'unit',
+    'unit', //30
     'unit_d',
     'ship_big',
     'ship',

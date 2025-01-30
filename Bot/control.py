@@ -51,9 +51,16 @@ def get_throttle_position(percent):
 
     return x, int(y_bottom - y_range * percent)
 
-def control_mouse(degree_name, throttle_name):
+active = False
+def switch_active():
+    global active
+    active = not active
+    print(f"active: {active}")
+
+def control_mouse(degree_name, throttle_name, level_finished_name, pause_name, done_name):
     global sine_values
     global cosine_values
+    global active
     preCalculate()
     
     degree_dtype = np.double
@@ -63,24 +70,45 @@ def control_mouse(degree_name, throttle_name):
     throttle_dtype = np.double
     throttle_shm = shared_memory.SharedMemory(name=throttle_name)
     throttle = np.ndarray((1,), dtype=throttle_dtype, buffer=throttle_shm.buf)
+
+    level_finished_dtype = np.bool_
+    level_finished_shm = shared_memory.SharedMemory(name=level_finished_name)
+    level_finished = np.ndarray((1,), dtype=level_finished_dtype, buffer=level_finished_shm.buf)
+
     throttle_old = throttle[0]
     throttle_change = False
 
+    pause_dtype = np.bool_
+    pause_shm = shared_memory.SharedMemory(name=pause_name)
+    pause = np.ndarray((1,), dtype=pause_dtype, buffer=pause_shm.buf)
+
+    done_dtype = np.bool_
+    done_shm = shared_memory.SharedMemory(name=done_name)
+    done = np.ndarray((1,), dtype=done_dtype, buffer=done_shm.buf)
+
     last_time = time.time()
+
+    keyboard.add_hotkey('up', lambda: switch_active())
 
     while 1:
         current_time = time.time()
         dt = current_time - last_time  # Calculate delta time in seconds
         last_time = current_time
+                # if throttle_old != throttle[0]:
+                #     print(f"throttle: {throttle[0]}, throttle_old: {throttle_old}")
+                #     throttle_old = throttle[0]
+                #     x, y = get_throttle_position(throttle_old)
+                    # pyautogui.mouseDown(x, y)
 
-        if (keyboard.is_pressed('up')):
-
-                if throttle_old != throttle[0]:
-                    print(f"throttle: {throttle[0]}, throttle_old: {throttle_old}")
-                    throttle_old = throttle[0]
-                    x, y = get_throttle_position(throttle_old)
-                    pyautogui.mouseDown(x, y)
-
-                pyautogui.mouseDown(sine_values[int(degree * 10**precision)], cosine_values[int(degree * 10**precision)])
+        if active and not pause[0]:
+            if level_finished[0]:
+                pyautogui.leftClick(800 + left, 450 + top)
+            else:
+                try:
+                    pyautogui.mouseDown(sine_values[int(degree[0] * 10**precision)], cosine_values[int(degree[0] * 10**precision)])
+                except:
+                    print(f"degree: {degree[0]}")
+        elif done[0]:
+            break
         else:
             pyautogui.mouseUp()

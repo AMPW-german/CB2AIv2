@@ -3,7 +3,7 @@ import multiprocessing.shared_memory as shared_memory
 from time import sleep
 import time
 
-def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name, throttle_name, keyboard_button_name, keyboard_button_shape, health_percent_name, base_health_percent_name, fuel_percent_name, yolo_name, yolo_shape, ground_name):
+def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name, throttle_name, keyboard_button_name, keyboard_button_shape, health_percent_name, fuel_percent_name, yolo_name, yolo_shape, ground_name, enemies_sign_name, level_finished_name):
     
     image_count_dtype = np.uint32
     pause_dtype = np.bool_
@@ -17,6 +17,8 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     fuel_percent_dtype = np.float32
     yolo_dtype = np.float32
     ground_dtype = np.bool_
+    enemies_sign_dtype = np.bool_
+    level_finished_dtype = np.bool_
 
     image_count_shm = shared_memory.SharedMemory(name=image_count_name)
     pause_shm = shared_memory.SharedMemory(name=pause_name)
@@ -26,10 +28,11 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     throttle_shm = shared_memory.SharedMemory(name=throttle_name)
     keyboard_button_shm = shared_memory.SharedMemory(name=keyboard_button_name)
     health_percent_shm = shared_memory.SharedMemory(name=health_percent_name)
-    base_health_percent_shm = shared_memory.SharedMemory(name=base_health_percent_name)
     fuel_percent_shm = shared_memory.SharedMemory(name=fuel_percent_name)
     yolo_shm = shared_memory.SharedMemory(name=yolo_name)
     ground_shm = shared_memory.SharedMemory(name=ground_name)
+    enemies_sign_shm = shared_memory.SharedMemory(name=enemies_sign_name)
+    level_finished_shm = shared_memory.SharedMemory(name=level_finished_name)
 
     image_count = np.ndarray((1,), dtype=image_count_dtype, buffer=image_count_shm.buf)
     pause = np.ndarray((1,), dtype=pause_dtype, buffer=pause_shm.buf)
@@ -39,11 +42,12 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     throttle = np.ndarray((1,), dtype=throttle_dtype, buffer=throttle_shm.buf)
     keyboard_button = np.ndarray(keyboard_button_shape, dtype=keyboard_button_dtype, buffer=keyboard_button_shm.buf)
     health_percent = np.ndarray((1,), dtype=health_percent_dtype, buffer=health_percent_shm.buf)
-    base_health_percent = np.ndarray((1,), dtype=base_health_percent_dtype, buffer=base_health_percent_shm.buf)
     fuel_percent = np.ndarray((1,), dtype=fuel_percent_dtype, buffer=fuel_percent_shm.buf)
     image_count_old = image_count[0]
     yolo = np.ndarray(yolo_shape, dtype=yolo_dtype, buffer=yolo_shm.buf)
     ground = np.ndarray((1,), dtype=ground_dtype, buffer=ground_shm.buf)
+    enemies_sign = np.ndarray((1,), dtype=enemies_sign_dtype, buffer=enemies_sign_shm.buf)
+    level_finished = np.ndarray((1,), dtype=level_finished_dtype, buffer=level_finished_shm.buf)
 
     indexes = np.where(yolo[:, 6] == 0)[0]
     if indexes is not None:
@@ -66,7 +70,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 
     multiplier = 1 # used to stretch the constant rate of change line in height to increase the turn rate (with the actual position numbers it's very small)
 
-    enemies = {18: 'rocket', 19: 'red_dot', 20: 'plane', 21: 'heli', 22: 'truck_r', 24: 'truck', 26: 'tank_s', 28: 'tank', 30: 'unit'}
+    enemies = {18: 'rocket', 19: 'red_dot', 20: 'plane', 21: 'heli', 22: 'truck_r', 24: 'truck', 26: 'tank_s', 28: 'tank', 30: 'unit', 32: 'ship_big', 33: 'ship', 34: 'landing_ship', 36: 'iceberg'}
 
     max_rate = 250
 
@@ -83,30 +87,31 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     directionChange = False
     reverseChange = False
     notReverseChange = False
-    refuel = False
-    landing = False
-    throttle50 = 0
-    start = False
-    start_dtime = 0
+    fullCircle = False
+    fallbackOVerride = False
+    fallbackDtime = 0
 
     fire = False
 
+    # TODO: enable shield, add reverse fallback (when player is too high)
     while 1:
         if done[0]:
             break
         
         if image_count[0] > image_count_old and not pause[0]:
-            if not landing and not refuel:
-                throttle[0] = 1
-            elif refuel:
-                throttle[0] = 0.5
-
-            if throttle50 <= 4:
-                throttle[0] = 0.5
-                throttle50 += 1
-                print("50 throttle")
-
             image_count_old = image_count[0]
+
+            if level_finished[0]:
+                reverse = False
+                degreeDes = 90
+                degree[0] = degreeDes
+                finishedCircle = False
+                circleFinishedDTime = 0
+                directionChange = False
+                reverseChange = False
+                notReverseChange = False
+                flightManeuver = "direct"
+                continue
 
             indexes = np.where(yolo[:, 6] == 0)[0]
             # indexs = index[0] if len(index) > 0 else None
@@ -115,55 +120,33 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
             index = (indexes[np.argmin(filtered)] if (filtered := yolo[indexes, 7][yolo[indexes, 7] != -1]).size > 0 else None) if len(indexes) > 0 else None
 
             if index is not None:
+                player_pos_old = player_pos
                 player_pos = [x * multiplier for x in yolo[index][:6].copy()] if yolo[index][0] >= 0 else player_pos
-
+                if abs(player_pos[0] - player_pos_old[0]) > 0.3:
+                    fallbackOVerride = True
 
             dTime = time.perf_counter() - startTime
             startTime = time.perf_counter()            
             if not user_input[0]:
-
-                if not refuel:
-                    if fuel_percent[0] < 0.4:
-                        refuel = True
-                        print("refuel")
-                    else:
-                        refuel = False
-                elif fuel_percent[0] > 0.9:
-                    refuel = False
-                    landing = False
-                    print("refuel done")
-                    start = True                        
-                    degreeDes = 70
-                    degree[0] = degreeDes
-                    reverse = False
-                    time.sleep(1)
-                    throttle50 = 0
-                    throttle[0] = 0.5
-                    start_dtime = 0
-                
                 lastDegreeDes = degreeDes
 
                 if not ground[0]:
                     # print("No ground")
                     line_height = 0.9
-                if refuel:
-                    line_height = 0.6
                 else:
-                    line_height = 0.3
+                    line_height = 0.35
 
                 rocket_dtime += dTime
                 circleFinishedDTime += dTime
-                start_dtime += dTime
 
-                if start_dtime < 8:
+                fallbackDtime += dTime
+                if fallbackDtime < 0.4:
                     continue
-                else:
-                    start = False
 
                 if directionChange and circleFinishedDTime > 1:
                     directionChange = False
                 
-                if player_pos[0] < 0.3 and flightManeuver not in flightManeuverList and not directionChange and reverse or reverseChange and not refuel and not landing:
+                if (player_pos[0] < 0.3 or not enemies_sign[0]) and flightManeuver not in flightManeuverList and not directionChange and reverse or reverseChange:
                     print("direction change: forward")
                     reverse = False
                     directionChange = True
@@ -171,8 +154,9 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     lastCircleDirection = -90
                     reverseChange = False
                     notReverseChange = False
+                    fullCircle = False
 
-                elif (player_pos[0] > 0.8 or refuel) and flightManeuver not in flightManeuverList and not directionChange and not reverse or notReverseChange and not landing:
+                elif (player_pos[0] > 0.8 or enemies_sign[0]) and flightManeuver not in flightManeuverList and not directionChange and not reverse or notReverseChange:
                     print("direction change: backward")
                     print(player_pos)
                     reverse = True
@@ -180,22 +164,11 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     flightManeuver = "circle_down_reverse"
                     lastCircleDirection = 450
                     notReverseChange = False
-                    reverseChange = False
-
-                    if fuel_percent[0] < 0.6:
-                        refuel = True
-                        print("refuel")
+                    reverseChange = True
 
                 if not reverse:
                     degreeDes = 90
                 else:
-                    if np.where(yolo[:, 6] == 1)[0].size > 0:
-                        if refuel:
-                            landing = True
-                            print("landing")
-                        else:
-                            reverseChange = True
-                            notReverseChange = False
                     degreeDes = 270
 
                 line_angle = convert_angle(degreeDes)
@@ -204,7 +177,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 v = 0.01
 
                 # Desired angle relative to the line
-                theta_desired = line_angle + np.degrees(np.arctan2(d, v)) * (4 if (not refuel and not start) else 1)
+                theta_desired = line_angle + np.degrees(np.arctan2(d, v))
 
                 # Compute angular error and handle wrapping
                 theta_error = (theta_desired - convert_angle(degree[0])) % 360
@@ -217,15 +190,6 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 
                 if not (degree[0] + circleTolerance > angle and degree[0] - circleTolerance < angle):
                     degreeDes = angle
-
-                if refuel and landing:
-                    degreeDes = 270
-                    if player_pos[1] < 0.5:
-                        degreeDes = 220
-
-                    if throttle50 >= 4:
-                        throttle[0] = 0
-                        print("0 throttle")
 
                 enemy_pos = [-1, -1, -1, -1, -1, -1,]
 
@@ -244,7 +208,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 
                 enemyDegree = -1
 
-                if enemy_pos[0] != -1 and not refuel:
+                if enemy_pos[0] != -1:
                     enemy_p = predict_pos(enemy_pos)
                     player_p = predict_pos(player_pos)
                     # https://stackoverflow.com/questions/9614109/how-to-calculate-an-angle-from-points
@@ -254,11 +218,6 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     theta *= 180/np.pi
                     # theta has a range of -180 to +180
                     enemyDegree = convert_angle(theta if theta > 0 else theta + 360)
-
-                    if reverse:
-                        if enemy_p[0] > 0.6:
-                            reverseChange = True
-                            notReverseChange = False
 
                     if flightManeuver not in flightManeuverList:
                         if enemyDegree > 60 and enemyDegree < 120:
@@ -281,7 +240,10 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     fire = 1
                     if lastCircleDirection > 360:
                         lastCircleDirection -= 360
-                        finishedCircle = True
+                        if fullCircle:
+                            fullCircle = False
+                        else:
+                            finishedCircle = True
 
                     if finishedCircle and lastCircleDirection > 70:
                         circleFinishedDTime = 0
@@ -295,8 +257,10 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     fire = 1
                     if lastCircleDirection < 0:
                         lastCircleDirection += 360
-                        finishedCircle = True
-
+                        if fullCircle:
+                            fullCircle = False
+                        else:
+                            finishedCircle = True
                     if finishedCircle and lastCircleDirection < 110:
                         circleFinishedDTime = 0
                         finishedCircle = False
@@ -309,7 +273,10 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     fire = 1
                     if lastCircleDirection < 0:
                         lastCircleDirection += 360
-                        finishedCircle = True
+                        if fullCircle:
+                            fullCircle = False
+                        else:
+                            finishedCircle = True
 
                     if finishedCircle and lastCircleDirection < 290:
                         circleFinishedDTime = 0
@@ -323,7 +290,10 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     fire = 1
                     if lastCircleDirection > 360:
                         lastCircleDirection -= 360
-                        finishedCircle = True
+                        if fullCircle:
+                            fullCircle = False
+                        else:
+                            finishedCircle = True
 
                     if finishedCircle and lastCircleDirection > 250:
                         finishedCircle = False
@@ -334,32 +304,30 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 if np.abs(degreeDes - enemyDegree) < 10 and enemyDegree != -1 and flightManeuver == "direct":
                     fire = 1
 
-                if rocket_dtime > 1 and flightManeuver == "direct":
-                    if not reverse:
-                        fire = 1
-                    if rocket_dtime > 1.1:
+                if rocket_dtime > 0.3 and flightManeuver == "direct":
+                    fire = 1
+
+                    if rocket_dtime > 0.5:
                         rocket_dtime = 0
 
-                if not (lastDegreeDes > 200 and lastDegreeDes < 340):
-                    keyboard_button[0] = fire
-                    fire = 0
-                else:
-                    keyboard_button[0] = 0
-                    fire = 0
 
-                if not ground[0] and not reverse and flightManeuver == "direct" and not start:
+                keyboard_button[0] = fire
+                fire = 0
+
+                if not ground[0] and flightManeuver == "direct" and circleFinishedDTime > 1:
+                    if not reverse:
                         degreeDes = 135
-                elif not ground[0] and flightManeuver == "direct":
-                    degreeDes = 235
+                    else:
+                        degreeDes = 235
 
-                if (player_pos[1] > 0.5 or degreeDes > 135 and degreeDes < 235 and flightManeuver not in flightManeuverList) and not landing and not start:
+                if player_pos[1] > 0.6 or degreeDes > 135 and degreeDes < 235 and flightManeuver not in flightManeuverList or fallbackOVerride:
                     print("Fallback")
                     print(player_pos)
-
-                    if degreeDes > 180:
-                        degreeDes = 350
-                    else:
-                        degreeDes = 10
+                    degreeDes = 10
+                    degree[0] = degreeDes
+                    if fallbackOVerride:
+                        fallbackOVerride = False
+                    fallbackDtime = 0
 
                 degree[0] = degreeDes
                 #print(degree)
