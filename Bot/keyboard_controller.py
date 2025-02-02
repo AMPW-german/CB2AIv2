@@ -6,7 +6,7 @@ def keyboard_exe(keyboard_button_name, keyboard_button_shape, done_name, pause_n
     import keyboard
     import time
 
-    keyboard_button_dtype = np.uint8
+    keyboard_button_dtype = np.bool_
     done_dtype = np.bool_
     pause_dtype = np.bool_
 
@@ -18,7 +18,7 @@ def keyboard_exe(keyboard_button_name, keyboard_button_shape, done_name, pause_n
     done = np.ndarray((1,), dtype=done_dtype, buffer=done_shm.buf)
     pause = np.ndarray((1,), dtype=pause_dtype, buffer=pause_shm.buf)
 
-    key_dict = {"0": "g", "1": "b", "2": "a", "3": "r", "4": "s", "5": "f"}
+    key_dict = {"0": "g", "1": "a",}
     key_list = list(key_dict.values())
 
     print(key_list)

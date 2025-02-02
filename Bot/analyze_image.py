@@ -160,7 +160,7 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
             # y_range = yEnd
             # count, base_health_percent[0] = check_pixels(img_cp, xStart, yStart, x_range, y_range, base_health_list_2d)
             
-            if check_pixel_list(img_cp, enemy_sign_points)[0] > 0.8:
+            if check_pixel_list(img_cp, enemy_sign_points)[0] > 0.32:
                 enemies_sign[0] = True
             else:
                 enemies_sign[0] = False

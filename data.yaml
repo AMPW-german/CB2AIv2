@@ -8,41 +8,41 @@ nc: 37  # Number of object classes
 
 # Class names
 names: [
-    'player',
-    'base_tower',
-    'base_fuel',
-    'base_silos',
-    'star',
-    'ability_gun',
-    'ability_b',
-    'ability_repair',
-    'ability_flare',
-    'ability_cluster',
-    'ability_napalm',
-    'ability_r',
-    'ability_r_s',
-    'bomb',
-    'bullet_p',
-    'bullet_n',
-    'bullet_t',
-    'bullet_s',
-    'rocket',
-    'red_dot',
-    'plane',
-    'heli',
-    'truck_r',
-    'truck_r_d',
-    'truck',
-    'truck_d',
-    'tank_s',
-    'tank_s_d',
-    'tank',
-    'tank_d',
+    'player', //0
+    'base_tower', //1
+    'base_fuel', //2
+    'base_silos', //3
+    'star', //4
+    'ability_gun', //5
+    'ability_b', //6
+    'ability_repair', //7
+    'ability_flare', //8
+    'ability_cluster', //9
+    'ability_napalm', //10
+    'ability_r', //11
+    'ability_r_s', //12
+    'bomb', //13
+    'bullet_p', //14
+    'bullet_n', //15
+    'bullet_t', //16
+    'bullet_s', //17
+    'rocket', //18
+    'red_dot', //19
+    'plane', //20
+    'heli', //21
+    'truck_r', //22
+    'truck_r_d', //23
+    'truck', //24
+    'truck_d', //25
+    'tank_s', //26
+    'tank_s_d', //27
+    'tank', //28
+    'tank_d', //29
     'unit', //30
-    'unit_d',
-    'ship_big',
-    'ship',
-    'landing_ship',
-    'iceberg',
-    'fuel_barrels',
+    'unit_d', //31
+    'ship_big', //32
+    'ship', //33
+    'landing_ship', //34
+    'iceberg', //35
+    'fuel_barrels', //36
 ]
