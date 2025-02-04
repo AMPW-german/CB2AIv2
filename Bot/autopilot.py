@@ -71,7 +71,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     multiplier = 1 # used to stretch the constant rate of change line in height to increase the turn rate (with the actual position numbers it's very small)
 
     enemies = {18: 'rocket', 19: 'red_dot', 20: 'plane', 21: 'heli', 22: 'truck_r', 24: 'truck', 26: 'tank_s', 28: 'tank', 30: 'unit', 32: 'ship_big', 33: 'ship', 34: 'landing_ship', 36: 'iceberg'}
-    bulletList = {15: 'bullet_n', 16: 'bullet_t', 17: 'bullet_s', 18: 'rocket'}
+    bulletList = {15: 'bullet_n', 16: 'bullet_t', 17: 'bullet_s',}
 
     max_rate = 250
 
@@ -94,6 +94,9 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     fullCircle = False
     fallbackOVerride = False
     fallbackDtime = 0
+    ignoreDifferentPosition = False
+    noIndexCount = 0
+    endFallback = False
 
     fire = False
 
@@ -114,31 +117,61 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 reverseChange = False
                 notReverseChange = False
                 flightManeuver = "direct"
+                ignoreDifferentPosition = True
                 continue
 
-            indexes = np.where(yolo[:, 6] == 0)[0]
-            # indexs = index[0] if len(index) > 0 else None
-
-            # select the index where the yolo array has the smallest value in the 7th index and the 7th index is not -1
-            if len(indexes) > 0:
-                index = (indexes[np.argmin(filtered)] if (filtered := yolo[indexes, 7][yolo[indexes, 7] != -1]).size > 0 else None)
-            else:
-                index = None
-                fallbackOVerride = True
-
-            if index is not None:
-                player_pos_old = player_pos
-                if yolo[index][0] >= 0:
-                    player_pos = [x * multiplier for x in yolo[index][:6].copy()]
-                else:
-                    fallbackOVerride = True
-
-                if abs(player_pos[0] - player_pos_old[0]) > 0.3:
-                    fallbackOVerride = True
-
-            dTime = time.perf_counter() - startTime
-            startTime = time.perf_counter()            
             if not user_input[0]:
+                dTime = time.perf_counter() - startTime
+                startTime = time.perf_counter()
+
+                rocket_dtime += dTime
+                circleFinishedDTime += dTime
+                backwardsDTime += dTime
+
+                indexes = np.where(yolo[:, 6] == 0)[0]
+                # indexs = index[0] if len(index) > 0 else None
+
+                # select the index where the yolo array has the smallest value in the 7th index and the 7th index is not -1
+                index = None
+                if len(indexes) > 0:
+                    index = (indexes[np.argmin(filtered)] if (filtered := yolo[indexes, 7][yolo[indexes, 7] != -1]).size > 0 else None)
+
+                if index is not None:
+                    noIndexCount = 0
+                    player_pos_old = player_pos
+                    if yolo[index][0] >= 0:
+                        player_pos = yolo[index][:6].copy()
+                    else:
+                        fallbackOVerride = True
+                        ignoreDifferentPosition = True
+                        fallbackDtime = 0
+                        print("Fallback: index < 0")
+
+                    if ignoreDifferentPosition:
+                        player_pos_old = player_pos
+                        ignoreDifferentPosition = False
+                        endFallback = True
+
+                    elif abs(player_pos[0] - player_pos_old[0]) > 0.3 or abs(player_pos[1] - player_pos_old[1]) > 0.3:
+                        fallbackOVerride = True
+                        print("Fallback: unreliable position")
+
+                elif noIndexCount >= 24:
+                    index = None
+                    fallbackOVerride = True
+                    fallbackDtime = 0
+                    ignoreDifferentPosition = True
+                    print("Fallback: no index found")
+                else:
+                    noIndexCount += 1
+
+                fallbackDtime += dTime
+                if fallbackDtime < 0.3:
+                    continue
+
+                if directionChange and circleFinishedDTime > 1:
+                    directionChange = False
+
                 lastDegreeDes = degreeDes
 
                 if not ground[0]:
@@ -146,50 +179,37 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     line_height = 0.9
                 else:
                     line_height = 0.35
-
-                rocket_dtime += dTime
-                circleFinishedDTime += dTime
-                backwardsDTime += dTime
-
-                fallbackDtime += dTime
-                if fallbackDtime < 0.4:
-                    continue
-
-                if directionChange and circleFinishedDTime > 1:
-                    directionChange = False
                 
                 #TODO fix the direction change
                 if flightManeuver not in flightManeuverList and not directionChange:
-                    if reverse and backwardsDTime > 5 and not left_border:
-                        if player_pos[0] < 0.3 or not enemies_sign[0] or reverseChange:
-                            if player_pos[0] < 0.3:
-                                print("left border")
-                                left_border = True
-                                right_border = False
-                            print("direction change: forward")
-                            reverse = False
-                            directionChange = True
-                            flightManeuver = "circle_down"
-                            lastCircleDirection = -90
-                            reverseChange = False
-                            notReverseChange = False
-                            fullCircle = False
+                    if reverse and (player_pos[0] < 0.3 or reverseChange and backwardsDTime > 3) and not enemies_sign[0]:
+                        if player_pos[0] < 0.3:
+                            print("left border")
+                            left_border = True
+                            right_border = False
+                        print("direction change: forward")
+                        reverse = False
+                        directionChange = True
+                        flightManeuver = "circle_down"
+                        lastCircleDirection = -90
+                        reverseChange = False
+                        notReverseChange = False
+                        fullCircle = False
 
-                    elif not reverse and not right_border or enemies_sign[0]:
-                        if player_pos[0] > 0.7 or enemies_sign[0] or notReverseChange:
-                            if player_pos[0] > 0.7:
-                                print("right border")
-                                right_border = True
-                                left_border = False
-                            print("direction change: backward")
-                            reverse = True
-                            directionChange = True
-                            flightManeuver = "circle_down_reverse"
-                            lastCircleDirection = 450
-                            reverseChange = True
-                            notReverseChange = False
-                            fullCircle = True
-                            backwardsDTime = 0
+                    elif not reverse and not right_border and left_border or enemies_sign[0] or player_pos[0] > 0.7 or notReverseChange:
+                        if player_pos[0] > 0.7:
+                            print("right border")
+                            right_border = True
+                            left_border = False
+                        print("direction change: backward")
+                        reverse = True
+                        directionChange = True
+                        flightManeuver = "circle_down_reverse"
+                        lastCircleDirection = 450
+                        reverseChange = True
+                        notReverseChange = False
+                        fullCircle = True
+                        backwardsDTime = 0
 
                 if not reverse:
                     degreeDes = 90
@@ -349,14 +369,18 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     else:
                         degreeDes = 235
 
-                if player_pos[1] > 0.6 or degreeDes > 135 and degreeDes < 235 and flightManeuver not in flightManeuverList or fallbackOVerride:
+                if (player_pos[1] > 0.6 or degreeDes > 135 and degreeDes < 235 and flightManeuver not in flightManeuverList or fallbackOVerride) and not endFallback:
                     print("Fallback")
                     print(player_pos)
                     degreeDes = 10
                     degree[0] = degreeDes
                     if fallbackOVerride:
                         fallbackOVerride = False
-                    fallbackDtime = 0
+
+                    if fallbackDtime >= 0.6:
+                        flightManeuver = "circle_down"
+
+                endFallback = False
 
 
                 degree[0] = degreeDes

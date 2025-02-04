@@ -30,9 +30,9 @@ def preCalculate():
         angle = deg / (10**precision)  # Calculate the angle based on precision
         # 148 = Größe des joysticks
         # 258: offset vom Fensterrand
-        sine_values[deg] = math.sin(math.radians(angle)) * 148 + 258 + left # x-value
+        sine_values[deg] = math.sin(math.radians(angle)) * 128 + 258 + left # x-value
         # 658: offset vom Fensterrand
-        cosine_values[deg] = math.cos(math.radians(angle)) * -148 + 658 + top # y-value
+        cosine_values[deg] = math.cos(math.radians(angle)) * -128 + 658 + top # y-value
 
 # Example of using the sine and cosine values
 def get_sin_cos(degree):
