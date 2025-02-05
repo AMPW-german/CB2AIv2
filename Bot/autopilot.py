@@ -88,7 +88,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     directionChange = False
     backwardsDTime = 0
     right_border = False
-    left_border = False
+    left_border = True
     reverseChange = False
     notReverseChange = False
     fullCircle = False
@@ -97,6 +97,8 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     ignoreDifferentPosition = False
     noIndexCount = 0
     endFallback = False
+
+    fallback = False
 
     fire = False
 
@@ -110,14 +112,22 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
             if level_finished[0]:
                 reverse = False
                 degreeDes = 90
-                degree[0] = degreeDes
+                flightManeuver = "direct"
+                lastCircleDirection = 90
                 finishedCircle = False
                 circleFinishedDTime = 0
                 directionChange = False
+                backwardsDTime = 0
+                right_border = False
+                left_border = True
                 reverseChange = False
                 notReverseChange = False
-                flightManeuver = "direct"
+                fullCircle = False
+                fallbackOVerride = False
+                fallbackDtime = 1
                 ignoreDifferentPosition = True
+                noIndexCount = 0
+                endFallback = False
                 continue
 
             if not user_input[0]:
@@ -154,134 +164,135 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 
                     elif abs(player_pos[0] - player_pos_old[0]) > 0.3 or abs(player_pos[1] - player_pos_old[1]) > 0.3:
                         fallbackOVerride = True
+                        fallbackDtime = 0
                         print("Fallback: unreliable position")
 
-                elif noIndexCount >= 24:
+                elif noIndexCount >= 16:
                     index = None
                     fallbackOVerride = True
-                    fallbackDtime = 0
+                    if fallbackDtime > 8 or not fallback:
+                        fallbackDtime = 0
                     ignoreDifferentPosition = True
                     print("Fallback: no index found")
                 else:
                     noIndexCount += 1
 
                 fallbackDtime += dTime
-                if fallbackDtime < 0.3:
-                    continue
 
-                if directionChange and circleFinishedDTime > 1:
-                    directionChange = False
+                if not fallback:
+                    if directionChange and circleFinishedDTime > 1:
+                        directionChange = False
 
-                lastDegreeDes = degreeDes
+                    lastDegreeDes = degreeDes
 
-                if not ground[0]:
-                    # print("No ground")
-                    line_height = 0.9
-                else:
-                    line_height = 0.35
-                
-                #TODO fix the direction change
-                if flightManeuver not in flightManeuverList and not directionChange:
-                    if reverse and (player_pos[0] < 0.3 or reverseChange and backwardsDTime > 3) and not enemies_sign[0]:
-                        if player_pos[0] < 0.3:
-                            print("left border")
-                            left_border = True
-                            right_border = False
-                        print("direction change: forward")
-                        reverse = False
-                        directionChange = True
-                        flightManeuver = "circle_down"
-                        lastCircleDirection = -90
-                        reverseChange = False
-                        notReverseChange = False
-                        fullCircle = False
+                    if not ground[0]:
+                        # print("No ground")
+                        line_height = 0.9
+                    else:
+                        line_height = 0.35
+                    
+                    #TODO fix the direction change
+                    if flightManeuver not in flightManeuverList and not directionChange:
+                        if reverse and (player_pos[0] and not left_border < 0.3 or reverseChange and backwardsDTime > 3) and not enemies_sign[0]:
+                            if player_pos[0] < 0.3:
+                                print("left border")
+                                left_border = True
+                                right_border = False
+                            print("direction change: forward")
+                            reverse = False
+                            directionChange = True
+                            flightManeuver = "circle_down"
+                            lastCircleDirection = -90
+                            reverseChange = False
+                            notReverseChange = False
+                            fullCircle = False
 
-                    elif not reverse and not right_border and left_border or enemies_sign[0] or player_pos[0] > 0.7 or notReverseChange:
-                        if player_pos[0] > 0.7:
-                            print("right border")
-                            right_border = True
-                            left_border = False
-                        print("direction change: backward")
-                        reverse = True
-                        directionChange = True
-                        flightManeuver = "circle_down_reverse"
-                        lastCircleDirection = 450
-                        reverseChange = True
-                        notReverseChange = False
-                        fullCircle = True
-                        backwardsDTime = 0
+                        elif not reverse and not right_border and left_border and player_pos[0] > 0.7 or enemies_sign[0] or notReverseChange:
+                            if player_pos[0] > 0.7:
+                                print("right border")
+                                right_border = True
+                                left_border = False
+                            print("direction change: backward")
+                            reverse = True
+                            directionChange = True
+                            flightManeuver = "circle_down_reverse"
+                            lastCircleDirection = 450
+                            reverseChange = True
+                            notReverseChange = False
+                            fullCircle = True
+                            backwardsDTime = 0
 
-                if not reverse:
-                    degreeDes = 90
-                else:
-                    degreeDes = 270
+                    if not reverse:
+                        degreeDes = 90
+                    else:
+                        degreeDes = 270
 
-                line_angle = convert_angle(degreeDes)
+                    line_angle = convert_angle(degreeDes)
 
-                d = player_pos[1] - line_height if not reverse else line_height - player_pos[1]  # Distance to line
-                v = 0.01
+                    d = player_pos[1] - line_height if not reverse else line_height - player_pos[1]  # Distance to line
+                    v = 0.01
 
-                # Desired angle relative to the line
-                theta_desired = line_angle + np.degrees(np.arctan2(d, v))
+                    # Desired angle relative to the line
+                    theta_desired = line_angle + np.degrees(np.arctan2(d, v))
 
-                # Compute angular error and handle wrapping
-                theta_error = (theta_desired - convert_angle(degree[0])) % 360
-                if theta_error > 180:
-                    theta_error -= 360
+                    # Compute angular error and handle wrapping
+                    theta_error = (theta_desired - convert_angle(degree[0])) % 360
+                    if theta_error > 180:
+                        theta_error -= 360
 
-                # Apply rate-limited angular adjustment
-                d_theta = np.sign(theta_error) * min(max_rate * dTime, abs(theta_error))
-                angle = convert_angle(d_theta if not reverse else d_theta - 180)
+                    # Apply rate-limited angular adjustment
+                    d_theta = np.sign(theta_error) * min(max_rate * dTime, abs(theta_error))
+                    angle = convert_angle(d_theta if not reverse else d_theta - 180)
 
-                if not (degree[0] + circleTolerance > angle and degree[0] - circleTolerance < angle):
-                    degreeDes = angle
+                    if not (degree[0] + circleTolerance > angle and degree[0] - circleTolerance < angle):
+                        degreeDes = angle
 
-                for class_id in bulletList.keys():
-                    if class_id in yolo[: , 6]:
-                        keyboard_button[1] = True#
-                        break
-
-                enemy_pos = [-1, -1, -1, -1, -1, -1,]
-
-                for enemy_id in enemies.keys():
-                    for i in range(yolo_shape[0]):
-                        if yolo[i, 6] == enemy_id and yolo[i, 8] >= 10:
-                            enemy_pos = yolo[i].copy()
+                    for class_id in bulletList.keys():
+                        if class_id in yolo[: , 6]:
+                            keyboard_button[1] = True#
                             break
 
-                    # index = np.where(yolo[:, 6] == enemy_id)[0]
-                    # index = index[0] if len(index) > 0 else None
-                    # if index is not None:
-                    #     enemy_pos = yolo[index][:6].copy()
-                    #     break
+                    enemy_pos = [-1, -1, -1, -1, -1, -1,]
 
-                enemyDegree = -1
+                    for enemy_id in enemies.keys():
+                        for i in range(yolo_shape[0]):
+                            if yolo[i, 6] == enemy_id and yolo[i, 8] >= 10:
+                                enemy_pos = yolo[i].copy()
+                                break
 
-                if enemy_pos[0] != -1:
-                    enemy_p = predict_pos(enemy_pos)
-                    player_p = predict_pos(player_pos)
-                    # https://stackoverflow.com/questions/9614109/how-to-calculate-an-angle-from-points
-                    dx = player_p[0] - enemy_p[0]
-                    dy = player_p[1] - enemy_p[1]
-                    theta = np.arctan2(dy, dx)
-                    theta *= 180/np.pi
-                    # theta has a range of -180 to +180
-                    enemyDegree = convert_angle(theta if theta > 0 else theta + 360)
+                        # index = np.where(yolo[:, 6] == enemy_id)[0]
+                        # index = index[0] if len(index) > 0 else None
+                        # if index is not None:
+                        #     enemy_pos = yolo[index][:6].copy()
+                        #     break
 
-                    if flightManeuver not in flightManeuverList:
-                        if enemyDegree > 60 and enemyDegree < 120:
-                            # set degreeDes to enemyDegree but limit the turn rate
-                            theta_error = (enemyDegree - degreeDes) % 360
-                            if theta_error > 180:
-                                theta_error -= 360
-                            
-                            degreeDes = convert_angle(np.sign(theta_error) * min(max_rate * dTime, abs(theta_error)))
-                        else:
-                            # if player_pos[1] > 0.3:
-                            flightManeuver = "circle_up"
-                            # else:
-                            #     flightManeuver = "circle_down"
-                            lastCircleDirection = 90
+                    enemyDegree = -1
+
+                    if enemy_pos[0] != -1:
+                        enemy_p = predict_pos(enemy_pos)
+                        player_p = predict_pos(player_pos)
+                        # https://stackoverflow.com/questions/9614109/how-to-calculate-an-angle-from-points
+                        dx = player_p[0] - enemy_p[0]
+                        dy = player_p[1] - enemy_p[1]
+                        theta = np.arctan2(dy, dx)
+                        theta *= 180/np.pi
+                        # theta has a range of -180 to +180
+                        enemyDegree = convert_angle(theta if theta > 0 else theta + 360)
+
+                        if flightManeuver not in flightManeuverList:
+                            if enemyDegree > 60 and enemyDegree < 120:
+                                # set degreeDes to enemyDegree but limit the turn rate
+                                theta_error = (enemyDegree - degreeDes) % 360
+                                if theta_error > 180:
+                                    theta_error -= 360
+                                
+                                degreeDes = convert_angle(np.sign(theta_error) * min(max_rate * dTime, abs(theta_error)))
+                            else:
+                                # if player_pos[1] > 0.3:
+                                flightManeuver = "circle_up"
+                                # else:
+                                #     flightManeuver = "circle_down"
+                                lastCircleDirection = 90
 
                 if flightManeuver == "circle_down":
                     circleFinishedDTime = 0
@@ -298,6 +309,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                         circleFinishedDTime = 0
                         finishedCircle = False
                         flightManeuver = "direct"
+                        fallbackDtime = 0
                     degreeDes = lastCircleDirection
                     
                 elif flightManeuver == "circle_up":
@@ -331,6 +343,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                         circleFinishedDTime = 0
                         finishedCircle = False
                         flightManeuver = "direct"
+                        fallbackDtime = 0
                     degreeDes = lastCircleDirection
 
                 elif flightManeuver == "circle_up_reverse":
@@ -363,7 +376,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 keyboard_button[0] = fire
                 fire = 0
 
-                if (not ground[0] and circleFinishedDTime > 1 or player_pos[1] < 0.2) and flightManeuver == "direct":
+                if (not ground[0] and circleFinishedDTime > 1 or player_pos[1] < 0.2) and flightManeuver == "direct" and not fallback:
                     if not reverse:
                         degreeDes = 135
                     else:
@@ -372,13 +385,23 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 if (player_pos[1] > 0.6 or degreeDes > 135 and degreeDes < 235 and flightManeuver not in flightManeuverList or fallbackOVerride) and not endFallback:
                     print("Fallback")
                     print(player_pos)
-                    degreeDes = 10
-                    degree[0] = degreeDes
+                    fallback = True
+                    if fallbackDtime >= 1:
+                        print("fallback circle")
+                        if reverse:
+                            flightManeuver = "circle_reverse_donw"
+                        else:
+                            flightManeuver = "circle_down"
+                    else:
+                        degreeDes = 10
+                        degree[0] = degreeDes
+
                     if fallbackOVerride:
                         fallbackOVerride = False
 
-                    if fallbackDtime >= 0.6:
-                        flightManeuver = "circle_down"
+
+                else:
+                    fallback = False
 
                 endFallback = False
 
