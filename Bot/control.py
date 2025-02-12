@@ -101,13 +101,10 @@ def control_mouse(degree_name, throttle_name, level_finished_name, pause_name, d
                     # pyautogui.mouseDown(x, y)
 
         if active and not pause[0]:
-            if level_finished[0]:
-                pyautogui.leftClick(800 + left, 450 + top)
-            else:
-                try:
-                    pyautogui.mouseDown(sine_values[int(degree[0] * 10**precision)], cosine_values[int(degree[0] * 10**precision)])
-                except:
-                    print(f"degree: {degree[0]}")
+            try:
+                pyautogui.mouseDown(sine_values[int(degree[0] * 10**precision)], cosine_values[int(degree[0] * 10**precision)])
+            except:
+                print(f"degree: {degree[0]}")
         elif done[0]:
             break
         else:

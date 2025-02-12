@@ -109,7 +109,7 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
     ground = np.ndarray((1,), dtype=ground_dtype, buffer=ground_shm.buf)
     pause = np.ndarray((1,), dtype=pause_dtype, buffer=pause_shm.buf)
     done = np.ndarray((1,), dtype=done_dtype, buffer=done_shm.buf)
-    enemies_sign = np.ndarray((1,), dtype=enemies_sign_dtype, buffer=enemies_sign_shm.buf)
+    enemies_sign_left = np.ndarray((1,), dtype=enemies_sign_dtype, buffer=enemies_sign_shm.buf)
     level_finished = np.ndarray((1,), dtype=level_finished_dtype, buffer=level_finished_shm.buf)
 
     img_cp_dtype = np.int16
@@ -161,18 +161,18 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
             # count, base_health_percent[0] = check_pixels(img_cp, xStart, yStart, x_range, y_range, base_health_list_2d)
             
             if check_pixel_list(img_cp, enemy_sign_points)[0] > 0.32:
-                enemies_sign[0] = True
+                enemies_sign_left[0] = True
             else:
-                enemies_sign[0] = False
+                enemies_sign_left[0] = False
 
             if check_pixel_list(img_cp, pause_points)[0] > 0.5:
                 pause[0] = True
 
-            if check_pixel_list(img_cp, game_over_points)[0] > 0.5:
-                pause[0] = True
-                # done[0] = True
+        #     if check_pixel_list(img_cp, game_over_points)[0] > 0.5:
+        #         # pause[0] = True
+        #         # done[0] = True
 
-            if check_pixel_list(img_cp, level_perfect_points)[0] > 0.5 or check_pixel_list(img_cp, level_finished_points)[0] > 0.5:
+            if check_pixel_list(img_cp, level_perfect_points)[0] > 0.5 or check_pixel_list(img_cp, level_finished_points)[0] > 0.5 or check_pixel_list(img_cp, game_over_points)[0] > 0.5:
                 level_finished[0] = True
             else:
                 level_finished[0] = False

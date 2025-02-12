@@ -88,7 +88,7 @@ if __name__ == '__main__':
     done = np.ndarray((1,), dtype=pause_dtype, buffer=done_shm.buf)
     user_input = np.ndarray((1,), dtype=user_input_dtype, buffer=user_input_shm.buf)
     ground = np.ndarray((1,), dtype=ground_dtype, buffer=ground_shm.buf)
-    enemies_sign = np.ndarray((1,), dtype=enemies_sign_dtype, buffer=enemies_sign_shm.buf)
+    enemies_sign_left = np.ndarray((1,), dtype=enemies_sign_dtype, buffer=enemies_sign_shm.buf)
     level_finished = np.ndarray((1,), dtype=level_finished_dtype, buffer=level_finished_shm.buf)
 
     degree[0] = 90
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     done[0] = False
     user_input[0] = False
     ground[0] = False
-    enemies_sign[0] = False
+    enemies_sign_left[0] = False
     level_finished[0] = False
 
     lock = Lock()
