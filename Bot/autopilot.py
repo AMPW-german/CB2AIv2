@@ -3,7 +3,7 @@ import multiprocessing.shared_memory as shared_memory
 from time import sleep
 import time
 
-def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name, throttle_name, keyboard_button_name, keyboard_button_shape, health_percent_name, fuel_percent_name, yolo_name, yolo_shape, ground_name, enemies_sign_name, level_finished_name):
+def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name, throttle_name, keyboard_button_name, keyboard_button_shape, health_percent_name, fuel_percent_name, yolo_name, yolo_shape, ground_name, enemies_sign_left_name, enemies_sign_right_name, level_finished_name):
     
     image_count_dtype = np.uint32
     pause_dtype = np.bool_
@@ -31,7 +31,8 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     fuel_percent_shm = shared_memory.SharedMemory(name=fuel_percent_name)
     yolo_shm = shared_memory.SharedMemory(name=yolo_name)
     ground_shm = shared_memory.SharedMemory(name=ground_name)
-    enemies_sign_shm = shared_memory.SharedMemory(name=enemies_sign_name)
+    enemies_sign_left_shm = shared_memory.SharedMemory(name=enemies_sign_left_name)
+    enemies_sign_right_shm = shared_memory.SharedMemory(name=enemies_sign_right_name)
     level_finished_shm = shared_memory.SharedMemory(name=level_finished_name)
 
     image_count = np.ndarray((1,), dtype=image_count_dtype, buffer=image_count_shm.buf)
@@ -46,7 +47,8 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     image_count_old = image_count[0]
     yolo = np.ndarray(yolo_shape, dtype=yolo_dtype, buffer=yolo_shm.buf)
     ground = np.ndarray((1,), dtype=ground_dtype, buffer=ground_shm.buf)
-    enemies_sign_left = np.ndarray((1,), dtype=enemies_sign_dtype, buffer=enemies_sign_shm.buf)
+    enemies_sign_left = np.ndarray((1,), dtype=enemies_sign_dtype, buffer=enemies_sign_left_shm.buf)
+    enemies_sign_right = np.ndarray((1,), dtype=enemies_sign_dtype, buffer=enemies_sign_right_shm.buf)
     level_finished = np.ndarray((1,), dtype=level_finished_dtype, buffer=level_finished_shm.buf)
 
     indexes = np.where(yolo[:, 6] == 0)[0]
@@ -220,13 +222,28 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                                 enemySignLeftDirectionChange = True
                                 fullCircle = True
 
+                        elif enemies_sign_right[0]:
+                            if reverse:
+                                reverse = False
+                                flightManeuver = "circle_down"
+                                lastCircleDirection = -90
+                                enemySignLeftDirectionChange = True
+                                fullCircle = True
+
                         # add enemies_sign_right
-                        elif not enemies_sign_left[0] and enemySignLeftDirectionChange == True:
-                            reverse = False
-                            flightManeuver = "circle_down"
-                            lastCircleDirection = -90
-                            enemySignLeftDirectionChange = False
-                            fullCircle = True
+                        elif not enemies_sign_left[0] and not enemies_sign_right[0] and enemySignLeftDirectionChange == True:
+                            if reverse:
+                                reverse = False
+                                flightManeuver = "circle_down"
+                                lastCircleDirection = -90
+                                enemySignLeftDirectionChange = False
+                                fullCircle = True
+                            else:
+                                reverse = True
+                                flightManeuver = "circle_down_reverse"
+                                lastCircleDirection = 450
+                                enemySignLeftDirectionChange = True
+                                fullCircle = True
 
                     if not reverse:
                         degreeDes = 90
@@ -389,7 +406,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     else:
                         degreeDes = 235
 
-                if (player_pos[1] > 0.6 or degreeDes > 135 and degreeDes < 235 and flightManeuver not in flightManeuverList or fallbackOVerride) and not endFallback:
+                if (player_pos[1] > 0.5 or degreeDes > 135 and degreeDes < 235 and flightManeuver not in flightManeuverList or fallbackOVerride) and not endFallback:
                     print("Fallback")
                     print(player_pos)
                     fallback = True

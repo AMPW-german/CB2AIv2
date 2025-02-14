@@ -75,7 +75,7 @@ def check_bottom(image):
     return percent, trueCount, count
         
 
-def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, health_percent_name, pause_name, done_name, ground_name, enemy_sign_name, level_finished_name):
+def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, health_percent_name, pause_name, done_name, ground_name, enemy_sign_left_name, enemy_sign_right_name, level_finished_name, keyboard_button_name, keyboard_button_shape):
     import multiprocessing.shared_memory as shared_memory
     import numpy as np
     import time
@@ -91,6 +91,8 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
     enemies_sign_dtype = np.bool_
     level_finished_dtype = np.bool_
 
+    keyboard_button_dtype = np.bool_
+
     image_shm = shared_memory.SharedMemory(name=image_name)
     image_count_shm = shared_memory.SharedMemory(name=image_count_name)
     fuel_percent_shm = shared_memory.SharedMemory(name=fuel_percent_name)
@@ -98,8 +100,10 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
     ground_shm = shared_memory.SharedMemory(name=ground_name)
     pause_shm = shared_memory.SharedMemory(name=pause_name)
     done_shm = shared_memory.SharedMemory(name=done_name)
-    enemies_sign_shm = shared_memory.SharedMemory(name=enemy_sign_name)
+    enemies_sign_left_shm = shared_memory.SharedMemory(name=enemy_sign_left_name)
+    enemies_sign_right_shm = shared_memory.SharedMemory(name=enemy_sign_right_name)
     level_finished_shm = shared_memory.SharedMemory(name=level_finished_name)
+    keyboard_button_shm = shared_memory.SharedMemory(name=keyboard_button_name)
 
     image = np.ndarray(image_shape, dtype=image_dtype, buffer=image_shm.buf)
     image_count = np.ndarray((1,), dtype=np.uint32, buffer=image_count_shm.buf)
@@ -109,8 +113,10 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
     ground = np.ndarray((1,), dtype=ground_dtype, buffer=ground_shm.buf)
     pause = np.ndarray((1,), dtype=pause_dtype, buffer=pause_shm.buf)
     done = np.ndarray((1,), dtype=done_dtype, buffer=done_shm.buf)
-    enemies_sign_left = np.ndarray((1,), dtype=enemies_sign_dtype, buffer=enemies_sign_shm.buf)
+    enemies_sign_left = np.ndarray((1,), dtype=enemies_sign_dtype, buffer=enemies_sign_left_shm.buf)
+    enemies_sign_right = np.ndarray((1,), dtype=enemies_sign_dtype, buffer=enemies_sign_right_shm.buf)
     level_finished = np.ndarray((1,), dtype=level_finished_dtype, buffer=level_finished_shm.buf)
+    keyboard_button = np.ndarray(keyboard_button_shape, dtype=keyboard_button_dtype, buffer=keyboard_button_shm.buf)
 
     img_cp_dtype = np.int16
     img_cp = image.astype(img_cp_dtype)
@@ -160,10 +166,15 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
             # y_range = yEnd
             # count, base_health_percent[0] = check_pixels(img_cp, xStart, yStart, x_range, y_range, base_health_list_2d)
             
-            if check_pixel_list(img_cp, enemy_sign_points)[0] > 0.32:
+            if check_pixel_list(img_cp, enemy_sign_left_points)[0] > 0.32:
                 enemies_sign_left[0] = True
             else:
                 enemies_sign_left[0] = False
+
+            if check_pixel_list(img_cp, enemy_sign_right_points)[0] > 0.32:
+                enemies_sign_right[0] = True
+            else:
+                enemies_sign_right[0] = False
 
             if check_pixel_list(img_cp, pause_points)[0] > 0.5:
                 pause[0] = True
@@ -171,6 +182,10 @@ def analyze_image(image_name, image_shape, image_count_name, fuel_percent_name, 
         #     if check_pixel_list(img_cp, game_over_points)[0] > 0.5:
         #         # pause[0] = True
         #         # done[0] = True
+
+            if check_pixel_list(img_cp, pilot_dead_points)[0] > 0.5:
+                keyboard_button[2] = True
+                continue
 
             if check_pixel_list(img_cp, level_perfect_points)[0] > 0.5 or check_pixel_list(img_cp, level_finished_points)[0] > 0.5 or check_pixel_list(img_cp, game_over_points)[0] > 0.5:
                 level_finished[0] = True
@@ -210,6 +225,14 @@ game_over_points = [
     [934, 126, 255, 255, 0],
 ]
 
+pilot_dead_points = [
+    [720, 710, 181, 0, 0],
+    [720, 743, 181, 0, 0],
+    [738, 727, 181, 0, 0],
+    [753, 710, 181, 0, 0],
+    [753, 743, 181, 0, 0],
+]
+
 level_perfect_points = [
     [584, 428, 255, 255, 0],
     [652, 433, 255, 255, 0],
@@ -228,12 +251,20 @@ level_finished_points = [
     [1216, 484, 255, 255, 0],
 ]
 
-enemy_sign_points = [
+enemy_sign_left_points = [
     [38, 433, 249, 1, 2],
     [111, 433, 253, 1, 0],
     [168, 433, 252, 1, 0],
     [76, 381, 173, 1, 0],
     [130, 381, 170, 2, 1],
+]
+
+enemy_sign_right_points = [
+    [1600 - 38, 433, 249, 1, 2],
+    [1600 - 111, 433, 253, 1, 0],
+    [1600 - 168, 433, 252, 1, 0],
+    [1600 - 76, 381, 173, 1, 0],
+    [1600 - 130, 381, 170, 2, 1],
 ]
 
 # left, top:     262, 13
