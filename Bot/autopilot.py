@@ -3,7 +3,7 @@ import multiprocessing.shared_memory as shared_memory
 from time import sleep
 import time
 
-def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name, throttle_name, keyboard_button_name, keyboard_button_shape, health_percent_name, fuel_percent_name, yolo_name, yolo_shape, ground_name, enemies_sign_left_name, enemies_sign_right_name, level_finished_name):
+def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name, keyboard_button_name, keyboard_button_shape, health_percent_name, fuel_percent_name, yolo_name, yolo_shape, ground_name, enemies_sign_left_name, enemies_sign_right_name, level_finished_name):
     
     image_count_dtype = np.uint32
     pause_dtype = np.bool_
@@ -25,7 +25,6 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     done_shm = shared_memory.SharedMemory(name=done_name)
     user_input_shm = shared_memory.SharedMemory(name=user_input_name)
     degree_shm = shared_memory.SharedMemory(name=degree_name)
-    throttle_shm = shared_memory.SharedMemory(name=throttle_name)
     keyboard_button_shm = shared_memory.SharedMemory(name=keyboard_button_name)
     health_percent_shm = shared_memory.SharedMemory(name=health_percent_name)
     fuel_percent_shm = shared_memory.SharedMemory(name=fuel_percent_name)
@@ -40,7 +39,6 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     done = np.ndarray((1,), dtype=done_dtype, buffer=done_shm.buf)
     user_input = np.ndarray((1,), dtype=user_input_dtype, buffer=user_input_shm.buf)
     degree = np.ndarray((1,), dtype=degree_dtype, buffer=degree_shm.buf)
-    throttle = np.ndarray((1,), dtype=throttle_dtype, buffer=throttle_shm.buf)
     keyboard_button = np.ndarray(keyboard_button_shape, dtype=keyboard_button_dtype, buffer=keyboard_button_shm.buf)
     health_percent = np.ndarray((1,), dtype=health_percent_dtype, buffer=health_percent_shm.buf)
     fuel_percent = np.ndarray((1,), dtype=fuel_percent_dtype, buffer=fuel_percent_shm.buf)
@@ -388,7 +386,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 if np.abs(degreeDes - enemyDegree) < 10 and enemyDegree != -1 and flightManeuver == "direct":
                     fire = 1
 
-                if rocket_dtime > 0.3 and flightManeuver == "direct":
+                if rocket_dtime > 0.3:
                     fire = 1
 
                     if rocket_dtime > 0.5:

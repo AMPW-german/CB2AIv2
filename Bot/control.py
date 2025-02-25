@@ -57,7 +57,7 @@ def switch_active():
     active = not active
     print(f"active: {active}")
 
-def control_mouse(degree_name, throttle_name, level_finished_name, pause_name, done_name):
+def control_mouse(degree_name, level_finished_name, pause_name, done_name):
     global sine_values
     global cosine_values
     global active
@@ -66,17 +66,10 @@ def control_mouse(degree_name, throttle_name, level_finished_name, pause_name, d
     degree_dtype = np.double
     degree_shm = shared_memory.SharedMemory(name=degree_name)
     degree = np.ndarray((1,), dtype=degree_dtype, buffer=degree_shm.buf)
-    
-    throttle_dtype = np.double
-    throttle_shm = shared_memory.SharedMemory(name=throttle_name)
-    throttle = np.ndarray((1,), dtype=throttle_dtype, buffer=throttle_shm.buf)
 
     level_finished_dtype = np.bool_
     level_finished_shm = shared_memory.SharedMemory(name=level_finished_name)
     level_finished = np.ndarray((1,), dtype=level_finished_dtype, buffer=level_finished_shm.buf)
-
-    throttle_old = throttle[0]
-    throttle_change = False
 
     pause_dtype = np.bool_
     pause_shm = shared_memory.SharedMemory(name=pause_name)

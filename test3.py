@@ -7,12 +7,12 @@ import subprocess
 
 autoHotKeyPath = r"D:\\programms\\autohotkey\\UX\\"
 hotkeyPath = f"{autoHotKeyPath}AutoHotkeyUX.exe"
-scriptPath = f".\\yEr.ahk"
+scriptPath = r".\\yEr.ahk"
 
 subprocess.Popen([hotkeyPath, scriptPath])
 
+time.sleep(2)
 
-for i in range(100):
-    keyboard.press_and_release("g")
-    time.sleep(0.025)
+subprocess.Popen([hotkeyPath, scriptPath])
 
+time.sleep(2)

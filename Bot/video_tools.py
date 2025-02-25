@@ -47,7 +47,7 @@ def timer(fps: int, image_name, image_shape, image_count_name, done_name):
     done_shm = shared_memory.SharedMemory(name=done_name)
     done = np.ndarray((1,), dtype=done_dtype, buffer=done_shm.buf)
 
-    camera = bettercam.create(max_buffer_len=2)
+    camera = bettercam.create()
 
     camera.start(region=(left, top, right, bottom), target_fps=fps)
     # start = time.perf_counter()
@@ -115,26 +115,46 @@ def timer_fps(fps: int, image_name, image_shape, image_count_name, done_name):
     done_shm = shared_memory.SharedMemory(name=done_name)
     done = np.ndarray((1,), dtype=done_dtype, buffer=done_shm.buf)
 
-    camera = bettercam.create(max_buffer_len=2)
+    # camera = bettercam.create(max_buffer_len=2)
 
-    camera.start(region=(left, top, right, bottom), target_fps=fps)
+    # camera.start(region=(left, top, right, bottom), target_fps=fps)
     start = time.perf_counter()
     fps_count = 0
 
+    time.sleep(2)
+
+    # import cv2
+
+    # img = camera.get_latest_frame()
+    
+    # im =  cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    # cv2.imshow(f"img:", im)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+
+    # cv2.imwrite(r".\\images\\test\\5.png", im)
+
+    import pyautogui
+
     while 1:
         if (done[0]):
-            camera.release()
             break
 
-        img = camera.get_latest_frame()
-        np.copyto(image, img)
+        img = pyautogui.screenshot(region=(left, top, right, bottom))
+        
+        # img =  cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        # cv2.imshow(f"img:", img)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+
+        # np.copyto(image, img)
         image_count[0] += 1
 
         fps_count += 1
 
         end_time = time.perf_counter() - start
         if end_time > 1:
-            print(f"bettercam: {fps_count/end_time}")
+            print(f"DXC: {fps_count/end_time}")
             end_time = 0
             fps_count = 0
             start = time.perf_counter()
