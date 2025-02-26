@@ -70,25 +70,15 @@ def timer(fps: int, image_name, image_shape, image_count_name, done_name):
         if (done[0]):
             camera.release()
             break
-
-        img = camera.get_latest_frame()
         
+        # show the image
         # img =  cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         # cv2.imshow(f"img:", img)
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
 
-        np.copyto(image, img)
+        np.copyto(image, camera.get_latest_frame())
         image_count[0] += 1
-
-        # fps_count += 1
-
-        # end_time = time.perf_counter() - start
-        # if end_time > 1:
-        #     print(f"DXC: {fps_count/end_time}")
-        #     end_time = 0
-        #     fps_count = 0
-        #     start = time.perf_counter()
 
 
 def timer_fps(fps: int, image_name, image_shape, image_count_name, done_name):
