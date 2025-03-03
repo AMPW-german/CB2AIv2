@@ -3,18 +3,14 @@ import multiprocessing.shared_memory as shared_memory
 from time import sleep
 import time
 
-def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name, keyboard_button_name, keyboard_button_shape, health_percent_name, fuel_percent_name, yolo_name, yolo_shape, ground_name, enemies_sign_left_name, enemies_sign_right_name, level_finished_name):
+def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name, keyboard_button_name, keyboard_button_shape, yolo_name, yolo_shape, ground_name, enemies_sign_left_name, enemies_sign_right_name, level_finished_name):
     
     image_count_dtype = np.uint32
     pause_dtype = np.bool_
     done_dtype = np.bool_
     user_input_dtype = np.bool_
     degree_dtype = np.double
-    throttle_dtype = np.double
     keyboard_button_dtype = np.bool_
-    health_percent_dtype = np.float32
-    base_health_percent_dtype = np.float32
-    fuel_percent_dtype = np.float32
     yolo_dtype = np.float32
     ground_dtype = np.bool_
     enemies_sign_dtype = np.bool_
@@ -26,8 +22,6 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     user_input_shm = shared_memory.SharedMemory(name=user_input_name)
     degree_shm = shared_memory.SharedMemory(name=degree_name)
     keyboard_button_shm = shared_memory.SharedMemory(name=keyboard_button_name)
-    health_percent_shm = shared_memory.SharedMemory(name=health_percent_name)
-    fuel_percent_shm = shared_memory.SharedMemory(name=fuel_percent_name)
     yolo_shm = shared_memory.SharedMemory(name=yolo_name)
     ground_shm = shared_memory.SharedMemory(name=ground_name)
     enemies_sign_left_shm = shared_memory.SharedMemory(name=enemies_sign_left_name)
@@ -40,8 +34,6 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     user_input = np.ndarray((1,), dtype=user_input_dtype, buffer=user_input_shm.buf)
     degree = np.ndarray((1,), dtype=degree_dtype, buffer=degree_shm.buf)
     keyboard_button = np.ndarray(keyboard_button_shape, dtype=keyboard_button_dtype, buffer=keyboard_button_shm.buf)
-    health_percent = np.ndarray((1,), dtype=health_percent_dtype, buffer=health_percent_shm.buf)
-    fuel_percent = np.ndarray((1,), dtype=fuel_percent_dtype, buffer=fuel_percent_shm.buf)
     image_count_old = image_count[0]
     yolo = np.ndarray(yolo_shape, dtype=yolo_dtype, buffer=yolo_shm.buf)
     ground = np.ndarray((1,), dtype=ground_dtype, buffer=ground_shm.buf)

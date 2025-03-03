@@ -1,6 +1,6 @@
 
 
-def keyboard_exe(keyboard_button_name, keyboard_button_shape, done_name, pause_name, level_finished_name):
+def keyboard_controller(keyboard_button_name, keyboard_button_shape, done_name, pause_name, level_finished_name):
     import numpy as np
     import multiprocessing.shared_memory as shared_memory
     import keyboard

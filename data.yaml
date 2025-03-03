@@ -1,48 +1,43 @@
 # Path to dataset directories
-train: D:/CB2AIv2/dataset1/images/train # Train dataset directory
-val: D:/CB2AIv2/dataset1/images/val     # Validation dataset directory
-test: D:/CB2AIv2/dataset1/images/test   # Optional, Test dataset directory
+train: D:/CB2AIv2/Dataset0/images/train # Train dataset directory
+val: D:/CB2AIv2/Dataset0/images/val     # Validation dataset directory
+test: D:/CB2AIv2/Dataset0/images/test   # Optional, Test dataset directory
 
 # Number of classes
-nc: 37  # Number of object classes
+nc: 32  # Number of object classes
 
 # Class names
 names: [
-    'player', //0
-    'base_tower', //1
-    'base_fuel', //2
-    'base_silos', //3
-    'star', //4
-    'ability_gun', //5
-    'ability_b', //6
-    'ability_repair', //7
-    'ability_flare', //8
-    'ability_cluster', //9
-    'ability_napalm', //10
-    'ability_r', //11
-    'ability_r_s', //12
-    'bomb', //13
-    'bullet_p', //14
-    'bullet_n', //15
-    'bullet_t', //16
-    'bullet_s', //17
-    'rocket', //18
-    'red_dot', //19
-    'plane', //20
-    'heli', //21
-    'truck_r', //22
-    'truck_r_d', //23
-    'truck', //24
-    'truck_d', //25
-    'tank_s', //26
-    'tank_s_d', //27
-    'tank', //28
-    'tank_d', //29
-    'unit', //30
-    'unit_d', //31
-    'ship_big', //32
-    'ship', //33
-    'landing_ship', //34
-    'iceberg', //35
-    'fuel_barrels', //36
+    'player',
+    'star',
+    'ability_gun',
+    'ability_b',
+    'ability_repair',
+    'ability_flare',
+    'ability_cluster',
+    'ability_napalm',
+    'ability_r',
+    'ability_r_s',
+    'bomb',
+    'bullet_p',
+    'bullet_n',
+    'bullet_t',
+    'bullet_s',
+    'rocket',
+    'red_dot',
+    'plane',
+    'heli',
+    'truck_r',
+    'truck_r_d',
+    'truck',
+    'truck_d',
+    'tank_s',
+    'tank_s_d',
+    'tank',
+    'tank_d',
+    'unit',
+    'unit_d',
+    'landing_ship',
+    'ship',
+    'ship_big',
 ]

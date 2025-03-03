@@ -30,3 +30,8 @@ tank
 tank_d
 unit
 unit_d
+ship_big
+ship
+landing_ship
+iceberg
+fuel_barrels
