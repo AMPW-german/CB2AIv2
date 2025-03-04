@@ -282,29 +282,11 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     enemyDegree = -1
 
                     if enemy_pos[0] != -1:
-                        enemy_p = predict_pos(enemy_pos)
-                        player_p = predict_pos(player_pos)
-                        # https://stackoverflow.com/questions/9614109/how-to-calculate-an-angle-from-points
-                        dx = player_p[0] - enemy_p[0]
-                        dy = player_p[1] - enemy_p[1]
-                        theta = np.arctan2(dy, dx)
-                        theta *= 180/np.pi
-                        # theta has a range of -180 to +180
-                        enemyDegree = convert_angle(theta if theta > 0 else theta + 360)
-
                         if flightManeuver not in flightManeuverList:
-                            if enemyDegree > 60 and enemyDegree < 120:
-                                # set degreeDes to enemyDegree but limit the turn rate
-                                theta_error = (enemyDegree - degreeDes) % 360
-                                if theta_error > 180:
-                                    theta_error -= 360
-                                
-                                degreeDes = convert_angle(np.sign(theta_error) * min(max_rate * dTime, abs(theta_error)))
+                            if not reverse:
+                                flightManeuver = "circle_up"
                             else:
-                                if not reverse:
-                                    flightManeuver = "circle_up"
-                                else:
-                                    flightManeuver = "circle_up_reverse"
+                                flightManeuver = "circle_up_reverse"
 
                 if flightManeuver == "circle_down":
                     circleFinishedDTime = 0

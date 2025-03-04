@@ -34,9 +34,7 @@ def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape, done
         if image_count[0] > image_count_old and not pause[0]:
             image_count_old = image_count[0]
 
-            #results = model.predict(image, stream=True, save=False, visualize=False, conf=0.64, device="cuda:0")
-            #imgsz=(928, 1600) #very slow
-            results = model.track(image, stream=True, persist=True, save=False, visualize=False, conf=0.64, device="cuda:0", verbose=False)
+            results = model.track(image, stream=True, persist=True, conf=0.64, max_det=100, device="cuda:0", verbose=False)
 
 
             for result in results:          
@@ -65,7 +63,7 @@ def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape, done
                         xChange = ((box[0] + (box[2] / 2)) - (old_tracks[index][0] + (old_tracks[index][2] / 2)))
                         yChange = ((box[1] + (box[3] / 2)) - (old_tracks[index][1] + (old_tracks[index][3] / 2)))
                         track_count = old_tracks[index][8] + 1
-
+                    
                     # x, y, length, height, xChange, yChange, class id, tracking id, track amount, confidence
                     yolo[i] = (box[0], box[1], box[2], box[3], xChange, yChange, res[i].cls[0], res[i].id[0] if res[i].id is not None else -1, track_count, res[i].conf[0])
                 old_tracks = yolo.copy()

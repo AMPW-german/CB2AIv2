@@ -1,6 +1,6 @@
 import time
 import keyboard
-from Bot.control import control_mouse, preCalculate
+from Bot.mouse_controller import control_mouse, preCalculate
 from Bot.video_tools import take_pictures
 
 import time
