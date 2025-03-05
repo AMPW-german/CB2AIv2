@@ -4,7 +4,7 @@ def track(image_name, image_shape, image_count_name, yolo_name, yolo_shape, done
     import numpy as np
     import time
 
-    model = YOLO(r"runs\\detect\\train3\\weights\\best.pt")
+    model = YOLO(r"runs\\detect\\train\\weights\\best.pt")
     print(model.names)
 
     image_dtype = np.uint8

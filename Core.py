@@ -14,7 +14,7 @@ if __name__ == '__main__':
     import Bot.autopilot
 
     image_shape = (900, 1600, 3)
-    keyboard_button_shape = (6,)
+    keyboard_button_shape = (3,)
     yolo_shape = (100, 10,)  # 100 objects, 10 fields each
     # x, y, length, height, xChange, yChange, class id, tracking id, track amount, confidence
     # all x/y values are normalized in to a range between 0 and 1. Only the x/y change vars have a range of -1 to 1
@@ -79,7 +79,7 @@ if __name__ == '__main__':
     processes.append(Process(target=Bot.analyze_image.analyze_image, args=(image_shm.name, image_shape, image_count_shm.name, pause_shm.name, done_shm.name, ground_shm.name, enemies_sign_left_shm.name, enemies_sign_right_shm.name, level_finished_shm.name, keyboard_button_shm.name, keyboard_button_shape,)))
     processes.append(Process(target=Bot.yolo.track, args=(image_shm.name, image_shape, image_count_shm.name, yolo_shm.name, yolo_shape, done_shm.name, pause_shm.name,)))
     processes.append(Process(target=Bot.mouse_controller.control_mouse, args=(degree_shm.name, pause_shm.name, done_shm.name,)))
-    processes.append(Process(target=Bot.keyboard_controller.keyboard_controller, args=(keyboard_button_shm.name, keyboard_button_shape, done_shm.name, pause_shm.name, level_finished_shm.name,)))
+    processes.append(Process(target=Bot.keyboard_controller.keyboard_controller, args=(keyboard_button_shm.name, keyboard_button_shape, done_shm.name, pause_shm.name,)))
     processes.append(Process(target=Bot.autopilot.pilot, args=(image_count_shm.name, pause_shm.name, done_shm.name, user_input_shm.name, degree_shm.name, keyboard_button_shm.name, keyboard_button_shape, yolo_shm.name, yolo_shape,  ground_shm.name, enemies_sign_left_shm.name, enemies_sign_right_shm.name, level_finished_shm.name,)))
 
     print("starting Processes")
