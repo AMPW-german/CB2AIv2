@@ -60,15 +60,13 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 
     rocket_dtime = 0
 
-    multiplier = 1 # used to stretch the constant rate of change line in height to increase the turn rate (with the actual position numbers it's very small)
-
     enemies = {18: 'rocket', 19: 'red_dot', 20: 'plane', 21: 'heli', 22: 'truck_r', 24: 'truck', 26: 'tank_s', 28: 'tank', 30: 'unit', 32: 'ship_big', 33: 'ship', 34: 'landing_ship', 36: 'iceberg'}
     bulletList = {15: 'bullet_n', 16: 'bullet_t', 17: 'bullet_s',}
 
     max_rate = 250
 
     enemyDegree = -1 # angle of a line towards the enemy
-    line_height = 0.4
+    line_height = 0.35
     circleTolerance = 1
 
 
@@ -90,6 +88,7 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
     endFallback = False
 
     fallback = False
+    lastCircleFallbackDirection = True # True = forward, False = backward
     enemySignLeftDirectionChange = False
 
     fire = False
@@ -128,7 +127,6 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                 backwardsDTime += dTime
 
                 indexes = np.where(yolo[:, 6] == 0)[0]
-                # indexs = index[0] if len(index) > 0 else None
 
                 # select the index where the yolo array has the smallest value in the 7th index and the 7th index is not -1
                 index = None
@@ -172,15 +170,11 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     if directionChange and circleFinishedDTime > 1:
                         directionChange = False
 
-                    lastDegreeDes = degreeDes
-
                     if not ground[0]:
-                        # print("No ground")
                         line_height = 0.9
                     else:
                         line_height = 0.35
                     
-                    #TODO fix the direction change
                     if flightManeuver not in flightManeuverList:
                         if reverse and player_pos[0] < 0.2:
                             backwardDirectionChangeCount = 0
@@ -265,28 +259,17 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                             keyboard_button[1] = True
                             break
 
-                    enemy_pos = [-1, -1, -1, -1, -1, -1,]
 
                     for enemy_id in enemies.keys():
                         for i in range(yolo_shape[0]):
-                            if yolo[i, 6] == enemy_id and yolo[i, 8] >= 10:
-                                enemy_pos = yolo[i].copy()
+                            if yolo[i, 6] == enemy_id and yolo[i, 8] >= 4:
+                                if flightManeuver not in flightManeuverList:
+                                    if not reverse:
+                                        flightManeuver = "circle_up"
+                                    else:
+                                        flightManeuver = "circle_up_reverse"
                                 break
 
-                        # index = np.where(yolo[:, 6] == enemy_id)[0]
-                        # index = index[0] if len(index) > 0 else None
-                        # if index is not None:
-                        #     enemy_pos = yolo[index][:6].copy()
-                        #     break
-
-                    enemyDegree = -1
-
-                    if enemy_pos[0] != -1:
-                        if flightManeuver not in flightManeuverList:
-                            if not reverse:
-                                flightManeuver = "circle_up"
-                            else:
-                                flightManeuver = "circle_up_reverse"
 
                 if flightManeuver == "circle_down":
                     circleFinishedDTime = 0
@@ -356,10 +339,6 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                         flightManeuver = "direct"
                     degreeDes = lastCircleDirection
 
-
-                if np.abs(degreeDes - enemyDegree) < 10 and enemyDegree != -1 and flightManeuver == "direct":
-                    fire = 1
-
                 if rocket_dtime > 0.3:
                     fire = 1
 
@@ -384,10 +363,12 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
                     fallback = True
                     if fallbackDtime >= 1:
                         print("fallback circle")
-                        if reverse:
+                        if not lastCircleFallbackDirection:
                             flightManeuver = "circle_reverse_donw"
+                            lastCircleFallbackDirection = True
                         else:
                             flightManeuver = "circle_down"
+                            lastCircleFallbackDirection = False
                     else:
                         degreeDes = 10
                         degree[0] = degreeDes
@@ -412,6 +393,3 @@ def pilot(image_count_name, pause_name, done_name, user_input_name, degree_name,
 def convert_angle(angle: float):
     a = (-1 * angle + 90)
     return a % 360
-
-def predict_pos(object):
-    return [1 - object[0] + object[4], object[1]+ object[5]]
